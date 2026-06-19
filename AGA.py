@@ -10,32 +10,32 @@ st.write("Modificá los parámetros en la barra lateral para ver los resultados 
 # --- BARRA LATERAL: ENTRADA DE PARÁMETROS MODIFICABLES ---
 st.sidebar.header("⚙️ Configuración de Parámetros")
 
-# Coeficientes de la Función Objetivo (Ganancias)
-st.sidebar.subheader("💰 Coeficientes de la Función Objetivo")
-g_x = st.sidebar.number_input("Ganancia de Antena Grande ($)", min_value=0.0, value=150.0, step=10.0)
-g_y = st.sidebar.number_input("Ganancia de Antena Mediana ($)", min_value=0.0, value=100.0, step=10.0)
-g_z = st.sidebar.number_input("Ganancia de Antena Chica ($)", min_value=0.0, value=80.0, step=10.0)
+# Valores de Ganancias
+st.sidebar.subheader("💰 Ganancias por Tipo de Antena")
+g_x = st.sidebar.number_input("Ganancia de Antena Grande ($)", min_value=0.0, value=150.0, step=1.0)
+g_y = st.sidebar.number_input("Ganancia de Antena Mediana ($)", min_value=0.0, value=100.0, step=1.0)
+g_z = st.sidebar.number_input("Ganancia de Antena Chica ($)", min_value=0.0, value=80.0, step=1.0)
 
 # RESTRICCIÓN 1: Cantidad de Antenas
 st.sidebar.subheader("📋 Cantidad de Antenas")
-r1_x = st.sidebar.number_input("Coeficiente Antena Grande en Cantidad", value=1.0, key="r1x")
-r1_y = st.sidebar.number_input("Coeficiente Antena Mediana en Cantidad", value=1.0, key="r1y")
-r1_z = st.sidebar.number_input("Coeficiente Antena Chica en Cantidad", value=1.0, key="r1z")
+r1_x = st.sidebar.number_input("Antena Grande en Cantidad", value=1.0, step=1.0, key="r1x")
+r1_y = st.sidebar.number_input("Antena Mediana en Cantidad", value=1.0, step=1.0, key="r1y")
+r1_z = st.sidebar.number_input("Antena Chica en Cantidad", value=1.0, step=1.0, key="r1z")
 lim_r1 = st.sidebar.number_input("Límite máximo Cantidad (≤)", min_value=1.0, value=15.0, step=1.0, key="r1lim")
 
 # RESTRICCIÓN 2: Consumo de Watts
 st.sidebar.subheader("📋 Consumo de Watts")
-r2_x = st.sidebar.number_input("Coeficiente Antena Grande en Watts", value=20.0, key="r2x")
-r2_y = st.sidebar.number_input("Coeficiente Antena Mediana en Watts", value=10.0, key="r2y")
-r2_z = st.sidebar.number_input("Coeficiente Antena Chica en Watts", value=5.0, key="r2z")
-lim_r2 = st.sidebar.number_input("Límite máximo Watts (≤)", min_value=1.0, value=200.0, step=10.0, key="r2lim")
+r2_x = st.sidebar.number_input("Antena Grande en Watts", value=20.0, step=1.0, key="r2x")
+r2_y = st.sidebar.number_input("Antena Mediana en Watts", value=10.0, step=1.0, key="r2y")
+r2_z = st.sidebar.number_input("Antena Chica en Watts", value=5.0, step=1.0, key="r2z")
+lim_r2 = st.sidebar.number_input("Límite máximo Watts (≤)", min_value=1.0, value=200.0, step=1.0, key="r2lim")
 
 # RESTRICCIÓN 3: Costo por Unidad
 st.sidebar.subheader("📋 Costo por Unidad")
-r3_x = st.sidebar.number_input("Coeficiente Antena Grande en Costo", value=500.0, key="r3x")
-r3_y = st.sidebar.number_input("Coeficiente Antena Mediana en Costo", value=300.0, key="r3y")
-r3_z = st.sidebar.number_input("Coeficiente Antena Chica en Costo", value=200.0, key="r3z")
-lim_r3 = st.sidebar.number_input("Límite máximo Costo (≤)", min_value=1.0, value=5000.0, step=100.0, key="r3lim")
+r3_x = st.sidebar.number_input("Antena Grande en Costo", value=500.0, step=1.0, key="r3x")
+r3_y = st.sidebar.number_input("Antena Mediana en Costo", value=300.0, step=1.0, key="r3y")
+r3_z = st.sidebar.number_input("Antena Chica en Costo", value=200.0, step=1.0, key="r3z")
+lim_r3 = st.sidebar.number_input("Límite máximo Costo (≤)", min_value=1.0, value=5000.0, step=1.0, key="r3lim")
 
 # Tipo de optimización (Entera o Continua)
 st.sidebar.subheader("🔢 Tipo de Variables")
@@ -79,8 +79,6 @@ res = milp(
 st.header("🎯 Resultados del Análisis de Optimización")
 
 if res.success:
-    st.success(f"**¡Optimización Exitosa!** Estado: {res.message}")
-    
     col1, col2, col3, col4 = st.columns(4)
     es_entero = (modo_resolucion == "Números Enteros (Discretos)")
     
@@ -106,19 +104,20 @@ if res.success:
     datos_tabla = {
         "Restricción Analizada": ["Cantidad de Antenas", "Consumo de Watts", "Costo por Unidad"],
         "Descripción de la Fórmula": [
-            f"{r1_x}(Grande) + {r1_y}(Mediana) + {r1_z}(Chica) ≤ {lim_r1}",
-            f"{r2_x}(Grande) + {r2_y}(Mediana) + {r2_z}(Chica) ≤ {lim_r2}",
-            f"{r3_x}(Grande) + {r3_y}(Mediana) + {r3_z}(Chica) ≤ {lim_r3}"
+            f"{int(r1_x)}(Grande) + {int(r1_y)}(Mediana) + {int(r1_z)}(Chica) ≤ {int(lim_r1)}",
+            f"{int(r2_x)}(Grande) + {int(r2_y)}(Mediana) + {int(r2_z)}(Chica) ≤ {int(lim_r2)}",
+            f"{int(r3_x)}(Grande) + {int(r3_y)}(Mediana) + {int(r3_z)}(Chica) ≤ {int(lim_r3)}"
         ],
         "Capacidad Utilizada": [round(consumo_r1, 2), round(consumo_r2, 2), round(consumo_r3, 2)],
-        "Límite Establecido": [lim_r1, lim_r2, lim_r3],
+        "Límite Establecido": [int(lim_r1), int(lim_r2), int(lim_r3)],
         "Sobrante (Holgura)": [round(lim_r1 - consumo_r1, 2), round(lim_r2 - consumo_r2, 2), round(lim_r3 - consumo_r3, 2)]
     }
     
     st.table(datos_tabla)
     
-    with st.expander("Ver detalles técnicos del vector de salida (res.x)"):
+    with st.expander("Ver datos técnicos del vector de salida (res.x)"):
         st.code(f"Matriz de resultados crudos: {res.x}", language="python")
 
 else:
     st.error(f"❌ No se encontró una solución óptima viable con las restricciones actuales. Motivo: {res.message}")
+
