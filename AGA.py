@@ -5,14 +5,20 @@ from scipy.optimize import milp, LinearConstraint, Bounds
 # 1. Configuración de la interfaz web
 st.set_page_config(page_title="Optimizador de Antenas 3D", layout="wide", page_icon="📊")
 st.title("📊 Optimizador de Producción de Antenas (MILP)")
-st.write("Modificá la cantidad máxima de antenas y el presupuesto en la barra lateral para recalcular.")
+st.write("Modificá la cantidad de antenas deseadas, el límite máximo y el presupuesto en la barra lateral para recalcular.")
 
-# --- BARRA LATERAL: ÚNICOS PARÁMETROS PERMITIDOS PARA EL USUARIO ---
+# --- BARRA LATERAL: ENTRADA DE PARÁMETROS PERMITIDOS PARA EL USUARIO ---
 st.sidebar.header("⚙️ Configuración de Parámetros")
 
-# Límites Permitidos (El usuario SOLO modifica la cantidad máxima y el presupuesto)
+# NUEVA SECCIÓN: Cupos mínimos de antenas que desea utilizar el usuario
+st.sidebar.subheader("📡 Cantidad de Antenas Requeridas (Mínimos)")
+min_grande = st.sidebar.number_input("Mínimo de Antenas Grandes", min_value=0.0, value=0.0, step=1.0)
+min_mediana = st.sidebar.number_input("Mínimo de Antenas Medianas", min_value=0.0, value=0.0, step=1.0)
+min_chica = st.sidebar.number_input("Mínimo de Antenas Chicas", min_value=0.0, value=0.0, step=1.0)
+
+# Límites Permitidos (Cantidad máxima total y presupuesto)
 st.sidebar.subheader("⚠️ Disponibilidad Máxima (Límites)")
-lim_r1 = st.sidebar.number_input("Límite máximo Cantidad de Antenas (≤)", min_value=1.0, value=15.0, step=1.0)
+lim_r1 = st.sidebar.number_input("Límite máximo Cantidad Total de Antenas (≤)", min_value=1.0, value=15.0, step=1.0)
 lim_r3 = st.sidebar.number_input("Presupuesto Máximo para Gastar ($) (≤)", min_value=1.0, value=5000.0, step=1.0)
 
 # Tipo de optimización (Entera o Continua)
@@ -29,19 +35,11 @@ else:
     integridad = [0, 0, 0]
 
 
-# --- VALORES TÉCNICOS INTERNOS FIJOS Y PROTEGIDOS (No modificables por el usuario) ---
-
-# VALORES DE GANANCIAS FIJOS (Protegidos contra modificaciones del usuario)
+# --- VALORES TÉCNICOS INTERNOS FIJOS Y PROTEGIDOS ---
 g_x, g_y, g_z = 150.0, 100.0, 80.0
-
-# Restricción 1: Cantidad de Antenas (Fórmula fija: 1x + 1y + 1z)
 r1_x, r1_y, r1_z = 1.0, 1.0, 1.0
-
-# Restricción 2: Consumo de Watts (Fórmula fija: 20x + 10y + 5z ≤ 200)
 r2_x, r2_y, r2_z = 20.0, 10.0, 5.0
 lim_r2 = 200.0
-
-# Restricción 3: Costo por Unidad (Fórmula fija: 500x + 300y + 200z)
 r3_x, r3_y, r3_z = 500.0, 300.0, 200.0
 
 
@@ -53,12 +51,14 @@ c = [-g_x, -g_y, -g_z]
 # Matriz A estructurada de forma fija y segura
 A = [[r1_x, r1_y, r1_z], [r2_x, r2_y, r2_z], [r3_x, r3_y, r3_z]]
 
-# Cotas superiores e inferiores asignadas dinámicamente con los límites correspondientes
+# Cotas superiores e inferiores de las restricciones principales
 bu = [lim_r1, lim_r2, lim_r3]
 bl = [-np.inf, -np.inf, -np.inf]
 
 constraints = LinearConstraint(A, bl, bu)
-bounds = Bounds([0.0, 0.0, 0.0], [np.inf, np.inf, np.inf])
+
+# MODIFICACIÓN CRÍTICA: Se inyectan las cantidades deseadas como límites inferiores de las variables [0.0, 0.0, 0.0]
+bounds = Bounds([min_grande, min_mediana, min_chica], [np.inf, np.inf, np.inf])
 
 # Ejecución del optimizador SciPy MILP
 res = milp(
@@ -113,4 +113,4 @@ if res.success:
         st.code(f"Matriz de resultados crudos: {res.x}", language="python")
 
 else:
-    st.error(f"❌ No se encontró una solución óptima viable con las restricciones actuales. Motivo: {res.message}")
+    st.error(f"❌ No se encontró una solución óptima viable. Es posible que las cantidades mínimas ingresadas superen el presupuesto o el límite de antenas disponible. Motivo: {res.message}")
