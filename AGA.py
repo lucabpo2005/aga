@@ -30,7 +30,10 @@ modo_resolucion = st.sidebar.selectbox(
 )
 
 # Asignamos una lista de 1s para enteros o 0s para continuos según la selección
-integridad = [1, 1, 1] if modo_resolucion == "Números Enteros (Discretos)" else [0, 0, 0]
+if modo_resolucion == "Números Enteros (Discretos)":
+    integridad = [1, 1, 1]
+else:
+    integridad = [0, 0, 0]
 
 
 # --- CÁLCULO MATEMÁTICO EN EL BACKEND ---
@@ -38,7 +41,7 @@ integridad = [1, 1, 1] if modo_resolucion == "Números Enteros (Discretos)" else
 # Coeficientes de la función objetivo (negativos porque milp minimiza)
 c = [-g_x, -g_y, -g_z]
 
-# Matriz A limpia sin comentarios internos para evitar errores de sintaxis
+# Matriz A perfectamente visible con sus tres filas correspondientes
 A = [,
  ,
     [500, 300, 200]
@@ -49,7 +52,7 @@ bu = [lim_r1, lim_r2, lim_r3]
 bl = [-np.inf, -np.inf, -np.inf]
 
 constraints = LinearConstraint(A, bl, bu)
-bounds = Bounds([0, 0, 0], [np.inf]*3) # Condición de no negatividad: x, y, z >= 0
+bounds = Bounds([0, 0, 0], [np.inf, np.inf, np.inf]) # Condición de no negatividad: x, y, z >= 0
 
 # Ejecución del optimizador SciPy
 res = milp(
@@ -69,7 +72,7 @@ if res.success:
     # Diseño en columnas para las variables de decisión y el beneficio total
     col1, col2, col3, col4 = st.columns(4)
     
-    es_entero = (integridad ==)
+    es_entero = (modo_resolucion == "Números Enteros (Discretos)")
     
     with col1:
         val_x = int(round(res.x[0])) if es_entero else round(res.x[0], 2)
