@@ -5,54 +5,8 @@ from scipy.optimize import milp, LinearConstraint, Bounds
 # 1. Configuración de la interfaz web
 st.set_page_config(page_title="Optimizador de Antenas 3D", layout="wide", page_icon="📊")
 
-# --- DISEÑO VISUAL: FONDO BLANCO CON PATRÓN DE MARCA DE AGUA "UNM" ---
-st.markdown(
-    """
-    <style>
-    /* Fondo general blanco con marca de agua tipográfica repetida */
-    .stApp {
-        background-color: #ffffff;
-        background-image: radial-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 0),
-                          url("data:image/svg+xml;utf8,<svg xmlns='http://w3.org' width='120' height='120' viewBox='0 0 120 120'><text x='50%' y='50%' font-family='Arial, sans-serif' font-size='22' font-weight='bold' fill='rgba(0, 50, 100, 0.04)' text-anchor='middle' dominant-baseline='middle'>UNM</text></svg>");
-        background-attachment: fixed;
-        color: #1e293b;
-    }
-    
-    /* Asegurar contraste de textos principales sobre blanco */
-    h1, h2, h3, p, span, label {
-        color: #1e293b !important;
-    }
-    
-    /* Tarjetas de resultados (métricas) con fondo claro para destacar */
-    [data-testid="stMetric"] {
-        background-color: #f8fafc !important;
-        border: 1px solid #e2e8f0 !important;
-        padding: 15px !important;
-        border-radius: 8px !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
-    }
-    [data-testid="stMetricValue"] {
-        color: #0f172a !important;
-    }
-    [data-testid="stMetricLabel"] {
-        color: #475569 !important;
-    }
-    
-    /* Estilo de la barra lateral */
-    [data-testid="stSidebar"] {
-        background-color: #f1f5f9 !important;
-        border-right: 1px solid #cbd5e1 !important;
-    }
-    [data-testid="stSidebar"] * {
-        color: #334155 !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 # Título Original Restaurado
-st.title("📊 Optimizador de Producción Lineal Interactiva (MILP)")
+st.title("📊 Optimizador de Production Lineal Interactiva (MILP)")
 st.write("Modificá los parámetros en la barra lateral para ver los resultados reflejados en tiempo real.")
 
 # --- BARRA LATERAL: ENTRADA DE PARÁMETROS MODIFICABLES ---
@@ -119,8 +73,7 @@ res = milp(
 st.header("🎯 Resultados del Análisis de Optimización")
 
 if res.success:
-    st.success(f"**¡Optimización Exitosa!** Estado: {res.message}")
-    
+    # Se eliminó la alerta verde de "Optimización Exitosa" para pasar directo a los números
     col1, col2, col3, col4 = st.columns(4)
     es_entero = (modo_resolucion == "Números Enteros (Discretos)")
     
@@ -161,3 +114,4 @@ if res.success:
 
 else:
     st.error(f"❌ No se encontró una solución óptima viable con las restricciones actuales. Motivo: {res.message}")
+
