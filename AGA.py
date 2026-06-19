@@ -28,7 +28,8 @@ modo_resolucion = st.sidebar.selectbox(
     "Resolver el problema en:",
     options=["Números Enteros (Discretos)", "Números Continuos (Decimales)"]
 )
-# Asignamos 1 para enteros y 0 para continuos según la selección
+
+# Asignamos una lista de 1s para enteros o 0s para continuos según la selección
 integridad = [1, 1, 1] if modo_resolucion == "Números Enteros (Discretos)" else [0, 0, 0]
 
 
@@ -37,12 +38,12 @@ integridad = [1, 1, 1] if modo_resolucion == "Números Enteros (Discretos)" else
 # Coeficientes de la función objetivo (negativos porque milp minimiza)
 c = [-g_x, -g_y, -g_z]
 
-# Coeficientes de las variables en las restricciones (Matriz A)
+# Coeficientes de las variables en las restricciones (Matriz A corregida)
 A = [,     # Fila 1: Coeficientes asociados a lim_r1,       # Fila 2: Coeficientes asociados a lim_r2
     [500, 300, 200]  # Fila 3: Coeficientes asociados a lim_r3
 ]
 
-# Cotas superiores e inferiores corregidas (-np.inf para restricciones de tipo <=)
+# Cotas superiores e inferiores (-np.inf para restricciones de tipo <=)
 bu = [lim_r1, lim_r2, lim_r3]
 bl = [-np.inf, -np.inf, -np.inf]
 
@@ -67,8 +68,7 @@ if res.success:
     # Diseño en columnas para las variables de decisión y el beneficio total
     col1, col2, col3, col4 = st.columns(4)
     
-    # Formateo dinámico según el tipo de variable elegido
-    es_entero = integridad[0] == 1
+    es_entero = integridad == [1, 1, 1]
     
     with col1:
         val_x = int(round(res.x[0])) if es_entero else round(res.x[0], 2)
