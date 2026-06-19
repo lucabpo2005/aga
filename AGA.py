@@ -5,16 +5,10 @@ from scipy.optimize import milp, LinearConstraint, Bounds
 # 1. Configuración de la interfaz web
 st.set_page_config(page_title="Optimizador de Antenas 3D", layout="wide", page_icon="📊")
 st.title("📊 Optimizador de Producción de Antenas (MILP)")
-st.write("Modificá las ganancias, la cantidad máxima de antenas y el presupuesto en la barra lateral para recalcular.")
+st.write("Modificá la cantidad máxima de antenas y el presupuesto en la barra lateral para recalcular.")
 
-# --- BARRA LATERAL: ENTRADA DE PARÁMETROS PERMITIDOS PARA EL USUARIO ---
+# --- BARRA LATERAL: ÚNICOS PARÁMETROS PERMITIDOS PARA EL USUARIO ---
 st.sidebar.header("⚙️ Configuración de Parámetros")
-
-# Valores de Ganancias (Modificables)
-st.sidebar.subheader("💰 Ganancias por Tipo de Antena")
-g_x = st.sidebar.number_input("Ganancia de Antena Grande ($)", min_value=0.0, value=150.0, step=1.0)
-g_y = st.sidebar.number_input("Ganancia de Antena Mediana ($)", min_value=0.0, value=100.0, step=1.0)
-g_z = st.sidebar.number_input("Ganancia de Antena Chica ($)", min_value=0.0, value=80.0, step=1.0)
 
 # Límites Permitidos (El usuario SOLO modifica la cantidad máxima y el presupuesto)
 st.sidebar.subheader("⚠️ Disponibilidad Máxima (Límites)")
@@ -36,6 +30,10 @@ else:
 
 
 # --- VALORES TÉCNICOS INTERNOS FIJOS Y PROTEGIDOS (No modificables por el usuario) ---
+
+# VALORES DE GANANCIAS FIJOS (Protegidos contra modificaciones del usuario)
+g_x, g_y, g_z = 150.0, 100.0, 80.0
+
 # Restricción 1: Cantidad de Antenas (Fórmula fija: 1x + 1y + 1z)
 r1_x, r1_y, r1_z = 1.0, 1.0, 1.0
 
@@ -100,9 +98,9 @@ if res.success:
     datos_tabla = {
         "Restricción Analizada": ["Cantidad de Antenas", "Consumo de Watts", "Costo por Unidad"],
         "Descripción de la Fórmula": [
-            f"{int(r1_x)}(Grande) + {int(r1_y)}(Mediana) + {int(r1_z)}(Chica) ≤ {int(lim_r1)}",
-            f"{int(r2_x)}(Grande) + {int(r2_y)}(Mediana) + {int(r2_z)}(Chica) ≤ {int(lim_r2)}",
-            f"{int(r3_x)}(Grande) + {int(r3_y)}(Mediana) + {int(r3_z)}(Chica) ≤ {int(lim_r3)}"
+            f"1(Grande) + 1(Mediana) + 1(Chica) ≤ {int(lim_r1)}",
+            f"20(Grande) + 10(Mediana) + 5(Chica) ≤ {int(lim_r2)}",
+            f"500(Grande) + 300(Mediana) + 200(Chica) ≤ {int(lim_r3)}"
         ],
         "Capacidad Utilizada": [round(consumo_r1, 2), round(consumo_r2, 2), round(consumo_r3, 2)],
         "Límite Establecido": [int(lim_r1), int(lim_r2), int(lim_r3)],
@@ -116,4 +114,3 @@ if res.success:
 
 else:
     st.error(f"❌ No se encontró una solución óptima viable con las restricciones actuales. Motivo: {res.message}")
-
