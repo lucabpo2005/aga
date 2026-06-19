@@ -1,3 +1,4 @@
+
 import streamlit as st
 import numpy as np
 from scipy.optimize import milp, LinearConstraint, Bounds
@@ -18,9 +19,9 @@ g_z = st.sidebar.number_input("Ganancia de z ($)", min_value=0, value=80, step=1
 
 # Límites de las Restricciones (Cotas Superiores)
 st.sidebar.subheader("⚠️ Disponibilidad Máxima (Límites)")
-lim_r1 = st.sidebar.number_input("Límite Restricción 1 (Mano de Obra / Recursos)", min_value=1, value=200, step=10)
-lim_r2 = st.sidebar.number_input("Límite Restricción 2 (Espacio / Cantidad)", min_value=1, value=15, step=1)
-lim_r3 = st.sidebar.number_input("Límite Restricción 3 (Presupuesto / Materiales)", min_value=1, value=5000, step=100)
+lim_r1 = st.sidebar.number_input("Límite Restricción 1 (x + y + z ≤ L1)", min_value=1, value=15, step=1)
+lim_r2 = st.sidebar.number_input("Límite Restricción 2 (20x + 10y + 5z ≤ L2)", min_value=1, value=200, step=10)
+lim_r3 = st.sidebar.number_input("Límite Restricción 3 (500x + 300y + 200z ≤ L3)", min_value=1, value=5000, step=100)
 
 # Tipo de optimización (Entera o Continua)
 st.sidebar.subheader("🔢 Tipo de Variables")
@@ -38,10 +39,9 @@ integridad = [1, 1, 1] if modo_resolucion == "Números Enteros (Discretos)" else
 # Coeficientes de la función objetivo (negativos porque milp minimiza)
 c = [-g_x, -g_y, -g_z]
 
-# Coeficientes de las variables en las restricciones (Matriz A corregida)
-A = [150, 100, 80]    # Fila 1: Coeficientes asociados a lim_r1, 
-    [20, 10, 5]     # Fila 2: Coeficientes asociados a lim_r2
-    [500, 300, 200]  # Fila 3: Coeficientes asociados a lim_r3
+# Coeficientes de las variables en las restricciones (Matriz A corregida según el problema original)
+A = [,         # Fila 1: Coeficientes asociados a lim_r1 (x + y + z <= 15),       # Fila 2: Coeficientes asociados a lim_r2 (20x + 10y + 5z <= 200)
+    [500, 300, 200]    # Fila 3: Coeficientes asociados a lim_r3 (500x + 300y + 200z <= 5000)
 ]
 
 # Cotas superiores e inferiores (-np.inf para restricciones de tipo <=)
@@ -87,12 +87,12 @@ if res.success:
     st.subheader("📊 Monitoreo de Restricciones y Recursos")
     
     # Calculamos el consumo real final usando los valores del vector óptimo res.x
-    consumo_r1 = (res.x[0] * 20) + (res.x[1] * 10) + (res.x[2] * 5)
-    consumo_r2 = (res.x[0] * 1) + (res.x[1] * 1) + (res.x[2] * 1)
+    consumo_r1 = (res.x[0] * 1) + (res.x[1] * 1) + (res.x[2] * 1)
+    consumo_r2 = (res.x[0] * 20) + (res.x[1] * 10) + (res.x[2] * 5)
     consumo_r3 = (res.x[0] * 500) + (res.x[1] * 300) + (res.x[2] * 200)
     
     datos_tabla = {
-        "Ecuación de la Restricción": ["20x + 10y + 5z ≤ Lim 1", "1x + 1y + 1z ≤ Lim 2", "500x + 300y + 200z ≤ Lim 3"],
+        "Ecuación de la Restricción": ["1x + 1y + 1z ≤ Límite 1", "20x + 10y + 5z ≤ Límite 2", "500x + 300y + 200z ≤ Límite 3"],
         "Capacidad Utilizada": [round(consumo_r1, 2), round(consumo_r2, 2), round(consumo_r3, 2)],
         "Límite Máximo Permitido": [lim_r1, lim_r2, lim_r3],
         "Holgura (Sobrante)": [round(lim_r1 - consumo_r1, 2), round(lim_r2 - consumo_r2, 2), round(lim_r3 - consumo_r3, 2)]
