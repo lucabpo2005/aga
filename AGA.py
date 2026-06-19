@@ -16,26 +16,26 @@ g_x = st.sidebar.number_input("Ganancia de Antena Grande ($)", min_value=0.0, va
 g_y = st.sidebar.number_input("Ganancia de Antena Mediana ($)", min_value=0.0, value=100.0, step=10.0)
 g_z = st.sidebar.number_input("Ganancia de Antena Chica ($)", min_value=0.0, value=80.0, step=10.0)
 
-# RESTRICCIÓN 1 INTERACTIVA (Antena Grande, Mediana y Chica)
-st.sidebar.subheader("📋 Restricción Nº 1")
-r1_x = st.sidebar.number_input("Coeficiente Antena Grande en R1", value=1.0, key="r1x")
-r1_y = st.sidebar.number_input("Coeficiente Antena Mediana en R1", value=1.0, key="r1y")
-r1_z = st.sidebar.number_input("Coeficiente Antena Chica en R1", value=1.0, key="r1z")
-lim_r1 = st.sidebar.number_input("Límite máximo R1 (≤)", min_value=1.0, value=15.0, step=1.0, key="r1lim")
+# RESTRICCIÓN 1: Cantidad de Antenas
+st.sidebar.subheader("📋 Cantidad de Antenas")
+r1_x = st.sidebar.number_input("Coeficiente Antena Grande en Cantidad", value=1.0, key="r1x")
+r1_y = st.sidebar.number_input("Coeficiente Antena Mediana en Cantidad", value=1.0, key="r1y")
+r1_z = st.sidebar.number_input("Coeficiente Antena Chica en Cantidad", value=1.0, key="r1z")
+lim_r1 = st.sidebar.number_input("Límite máximo Cantidad (≤)", min_value=1.0, value=15.0, step=1.0, key="r1lim")
 
-# RESTRICCIÓN 2 INTERACTIVA (Mantiene coeficientes base del problema)
-st.sidebar.subheader("📋 Restricción Nº 2")
-r2_x = st.sidebar.number_input("Coeficiente x en R2", value=20.0, key="r2x")
-r2_y = st.sidebar.number_input("Coeficiente y en R2", value=10.0, key="r2y")
-r2_z = st.sidebar.number_input("Coeficiente z en R2", value=5.0, key="r2z")
-lim_r2 = st.sidebar.number_input("Límite máximo R2 (≤)", min_value=1.0, value=200.0, step=10.0, key="r2lim")
+# RESTRICCIÓN 2: Consumo de Watts
+st.sidebar.subheader("📋 Consumo de Watts")
+r2_x = st.sidebar.number_input("Coeficiente Antena Grande en Watts", value=20.0, key="r2x")
+r2_y = st.sidebar.number_input("Coeficiente Antena Mediana en Watts", value=10.0, key="r2y")
+r2_z = st.sidebar.number_input("Coeficiente Antena Chica en Watts", value=5.0, key="r2z")
+lim_r2 = st.sidebar.number_input("Límite máximo Watts (≤)", min_value=1.0, value=200.0, step=10.0, key="r2lim")
 
-# RESTRICCIÓN 3 INTERACTIVA (Antena Grande, Mediana y Chica)
-st.sidebar.subheader("📋 Restricción Nº 3")
-r3_x = st.sidebar.number_input("Coeficiente Antena Grande en R3", value=500.0, key="r3x")
-r3_y = st.sidebar.number_input("Coeficiente Antena Mediana en R3", value=300.0, key="r3y")
-r3_z = st.sidebar.number_input("Coeficiente Antena Chica en R3", value=200.0, key="r3z")
-lim_r3 = st.sidebar.number_input("Límite máximo R3 (≤)", min_value=1.0, value=5000.0, step=100.0, key="r3lim")
+# RESTRICCIÓN 3: Costo por Unidad
+st.sidebar.subheader("📋 Costo por Unidad")
+r3_x = st.sidebar.number_input("Coeficiente Antena Grande en Costo", value=500.0, key="r3x")
+r3_y = st.sidebar.number_input("Coeficiente Antena Mediana en Costo", value=300.0, key="r3y")
+r3_z = st.sidebar.number_input("Coeficiente Antena Chica en Costo", value=200.0, key="r3z")
+lim_r3 = st.sidebar.number_input("Límite máximo Costo (≤)", min_value=1.0, value=5000.0, step=100.0, key="r3lim")
 
 # Tipo de optimización (Entera o Continua)
 st.sidebar.subheader("🔢 Tipo de Variables")
@@ -56,7 +56,7 @@ else:
 # Coeficientes objetivos invertidos para maximizar con SciPy milp
 c = [-g_x, -g_y, -g_z]
 
-# Matriz A estructurada horizontalmente de forma segura
+# Matriz A estructurada de forma segura en una sola línea plana
 A = [[r1_x, r1_y, r1_z], [r2_x, r2_y, r2_z], [r3_x, r3_y, r3_z]]
 
 # Cotas superiores e inferiores asignadas dinámicamente
@@ -104,11 +104,11 @@ if res.success:
     consumo_r3 = (res.x[0] * r3_x) + (res.x[1] * r3_y) + (res.x[2] * r3_z)
     
     datos_tabla = {
-        "Restricción Analizada": ["Restricción Nº 1 (Específica)", "Restricción Nº 2 (Base)", "Restricción Nº 3 (Específica)"],
-        "Descripción en Pantalla": [
-            f"Límite de Antenas: {r1_x}(Grande) + {r1_y}(Mediana) + {r1_z}(Chica) ≤ {lim_r1}",
-            f"Capacidad General: {r2_x}x + {r2_y}y + {r2_z}z ≤ {lim_r2}",
-            f"Presupuesto Antenas: {r3_x}(Grande) + {r3_y}(Mediana) + {r3_z}(Chica) ≤ {lim_r3}"
+        "Restricción Analizada": ["Cantidad de Antenas", "Consumo de Watts", "Costo por Unidad"],
+        "Descripción de la Fórmula": [
+            f"{r1_x}(Grande) + {r1_y}(Mediana) + {r1_z}(Chica) ≤ {lim_r1}",
+            f"{r2_x}(Grande) + {r2_y}(Mediana) + {r2_z}(Chica) ≤ {lim_r2}",
+            f"{r3_x}(Grande) + {r3_y}(Mediana) + {r3_z}(Chica) ≤ {lim_r3}"
         ],
         "Capacidad Utilizada": [round(consumo_r1, 2), round(consumo_r2, 2), round(consumo_r3, 2)],
         "Límite Establecido": [lim_r1, lim_r2, lim_r3],
