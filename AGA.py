@@ -5,18 +5,18 @@ from scipy.optimize import milp, LinearConstraint, Bounds
 # 1. Configuración de la interfaz web
 st.set_page_config(page_title="Optimizador de Antenas 3D", layout="wide", page_icon="📊")
 st.title("📊 Optimizador de Producción de Antenas (MILP)")
-st.write("Modificá la cantidad de antenas deseadas, los límites máximos, los Watts y el presupuesto en la barra lateral para recalcular.")
+st.write("Modificá la cantidad exacta de antenas a instalar y los límites máximos en la barra lateral para evaluar el escenario.")
 
-# --- BARRA LATERAL: ENTRADA DE PARÁMETROS PERMITIDOS PARA EL USUARIO ---
+# --- BARRA LATERAL: ENTRADA DE PARÁMETROS DEL USUARIO ---
 st.sidebar.header("⚙️ Configuración de Parámetros")
 
-# Cupos mínimos de antenas que desea utilizar el usuario
-st.sidebar.subheader("📡 Cantidad de Antenas Requeridas (Mínimos)")
-min_grande = st.sidebar.number_input("Mínimo de Antenas Grandes", min_value=0.0, value=0.0, step=1.0)
-min_mediana = st.sidebar.number_input("Mínimo de Antenas Medianas", min_value=0.0, value=0.0, step=1.0)
-min_chica = st.sidebar.number_input("Mínimo de Antenas Chicas", min_value=0.0, value=0.0, step=1.0)
+# NUEVA SECCIÓN: Cantidades exactas deseadas por el usuario (Van acorde al cuadro central)
+st.sidebar.subheader("📡 Cantidad de Antenas a Instalar")
+cant_grande = st.sidebar.number_input("Cantidad de Antenas Grandes", min_value=0.0, value=5.0, step=1.0)
+cant_mediana = st.sidebar.number_input("Cantidad de Antenas Medianas", min_value=0.0, value=5.0, step=1.0)
+cant_chica = st.sidebar.number_input("Cantidad de Antenas Chicas", min_value=0.0, value=3.0, step=1.0)
 
-# Límites Permitidos (El usuario modifica las capacidades máximas del sistema)
+# Límites Máximos Permitidos (El usuario modifica las capacidades del sistema)
 st.sidebar.subheader("⚠️ Disponibilidad Máxima (Límites)")
 lim_r1 = st.sidebar.number_input("Límite máximo Cantidad Total de Antenas (≤)", min_value=1.0, value=15.0, step=1.0)
 lim_r2 = st.sidebar.number_input("Límite máximo Consumo de Watts (≤)", min_value=1.0, value=200.0, step=1.0)
@@ -29,7 +29,6 @@ modo_resolucion = st.sidebar.selectbox(
     options=["Números Enteros (Discretos)", "Números Continuos (Decimales)"]
 )
 
-# Determinación del vector de integridad de forma segura
 if modo_resolucion == "Números Enteros (Discretos)":
     integridad = [1, 1, 1]
 else:
@@ -45,20 +44,21 @@ r3_x, r3_y, r3_z = 500.0, 300.0, 200.0
 
 # --- CÁLCULO MATEMÁTICO EN EL BACKEND ---
 
-# Coeficientes objetivos invertidos para maximizar con SciPy milp
+# Coeficientes objetivos invertidos para maximizar
 c = [-g_x, -g_y, -g_z]
 
 # Matriz A estructurada de forma fija y segura
 A = [[r1_x, r1_y, r1_z], [r2_x, r2_y, r2_z], [r3_x, r3_y, r3_z]]
 
-# Cotas superiores e inferiores de las restricciones principales (lim_r2 ahora es dinámico)
+# Cotas superiores e inferiores de las restricciones principales
 bu = [lim_r1, lim_r2, lim_r3]
 bl = [-np.inf, -np.inf, -np.inf]
 
 constraints = LinearConstraint(A, bl, bu)
 
-# Se inyectan las cantidades deseadas como límites inferiores de las variables
-bounds = Bounds([min_grande, min_mediana, min_chica], [np.inf, np.inf, np.inf])
+# SINCRONIZACIÓN TOTAL: Fijamos el límite inferior y superior con el mismo valor elegido por el usuario
+# Esto obliga al optimizador a evaluar exactamente las cantidades del cuadro lateral
+bounds = Bounds([cant_grande, cant_mediana, cant_chica], [cant_grande, cant_mediana, cant_chica])
 
 # Ejecución del optimizador SciPy MILP
 res = milp(
@@ -90,7 +90,7 @@ if res.success:
         
     st.subheader("📊 Monitoreo Dinámico de Restricciones")
     
-    # Cálculo del consumo en tiempo real basado en el vector óptimo res.x
+    # Cálculo del consumo basado exactamente en el escenario del cuadro central
     consumo_r1 = (res.x[0] * r1_x) + (res.x[1] * r1_y) + (res.x[2] * r1_z)
     consumo_r2 = (res.x[0] * r2_x) + (res.x[1] * r2_y) + (res.x[2] * r2_z)
     consumo_r3 = (res.x[0] * r3_x) + (res.x[1] * r3_y) + (res.x[2] * r3_z)
@@ -113,5 +113,4 @@ if res.success:
         st.code(f"Matriz de resultados crudos: {res.x}", language="python")
 
 else:
-    st.error(f"❌ No se encontró una solución óptima viable. Es posible que las demandas mínimas o el consumo de Watts ingresado entren en conflicto con el presupuesto disponible. Motivo: {res.message}")
-
+    st.error(f"❌ El escenario actual NO cumple las condiciones de diseño. La combinación de antenas elegida en la barra lateral supera los Watts, la cantidad máxima permitida o el presupuesto establecido.")
