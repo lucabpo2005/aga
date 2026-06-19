@@ -1,5 +1,4 @@
-
-import streamlit as st
++import streamlit as st
 import numpy as np
 from scipy.optimize import milp, LinearConstraint, Bounds
 
@@ -39,9 +38,10 @@ integridad = [1, 1, 1] if modo_resolucion == "Números Enteros (Discretos)" else
 # Coeficientes de la función objetivo (negativos porque milp minimiza)
 c = [-g_x, -g_y, -g_z]
 
-# Coeficientes de las variables en las restricciones (Matriz A corregida según el problema original)
-A = [,         # Fila 1: Coeficientes asociados a lim_r1 (x + y + z <= 15),       # Fila 2: Coeficientes asociados a lim_r2 (20x + 10y + 5z <= 200)
-    [500, 300, 200]    # Fila 3: Coeficientes asociados a lim_r3 (500x + 300y + 200z <= 5000)
+# Matriz A limpia sin comentarios internos para evitar errores de sintaxis
+A = [,
+ ,
+    [500, 300, 200]
 ]
 
 # Cotas superiores e inferiores (-np.inf para restricciones de tipo <=)
@@ -69,7 +69,7 @@ if res.success:
     # Diseño en columnas para las variables de decisión y el beneficio total
     col1, col2, col3, col4 = st.columns(4)
     
-    es_entero = integridad == [1, 1, 1]
+    es_entero = (integridad ==)
     
     with col1:
         val_x = int(round(res.x[0])) if es_entero else round(res.x[0], 2)
