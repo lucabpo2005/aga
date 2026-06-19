@@ -39,7 +39,8 @@ integridad = [1, 1, 1] if modo_resolucion == "Números Enteros (Discretos)" else
 c = [-g_x, -g_y, -g_z]
 
 # Coeficientes de las variables en las restricciones (Matriz A corregida)
-A = [,     # Fila 1: Coeficientes asociados a lim_r1,       # Fila 2: Coeficientes asociados a lim_r2
+A = [150, 100, 80]    # Fila 1: Coeficientes asociados a lim_r1, 
+    [20, 10, 5]     # Fila 2: Coeficientes asociados a lim_r2
     [500, 300, 200]  # Fila 3: Coeficientes asociados a lim_r3
 ]
 
