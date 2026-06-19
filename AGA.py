@@ -29,7 +29,7 @@ modo_resolucion = st.sidebar.selectbox(
     options=["Números Enteros (Discretos)", "Números Continuos (Decimales)"]
 )
 
-# Asignamos una lista de 1s para enteros o 0s para continuos según la selección
+# Estructuración lineal para evitar errores de renderizado
 if modo_resolucion == "Números Enteros (Discretos)":
     integridad = [1, 1, 1]
 else:
@@ -38,21 +38,18 @@ else:
 
 # --- CÁLCULO MATEMÁTICO EN EL BACKEND ---
 
-# Coeficientes de la función objetivo (negativos porque milp minimiza)
+# Coeficientes objetivos invertidos para maximizar
 c = [-g_x, -g_y, -g_z]
 
-# Matriz A perfectamente visible con sus tres filas correspondientes
-A = [,
- ,
-    [500, 300, 200]
-]
+# Matriz A escrita de manera horizontal continua para forzar la visibilidad de los números
+A = [[1, 1, 1], [20, 10, 5], [500, 300, 200]]
 
 # Cotas superiores e inferiores (-np.inf para restricciones de tipo <=)
 bu = [lim_r1, lim_r2, lim_r3]
 bl = [-np.inf, -np.inf, -np.inf]
 
 constraints = LinearConstraint(A, bl, bu)
-bounds = Bounds([0, 0, 0], [np.inf, np.inf, np.inf]) # Condición de no negatividad: x, y, z >= 0
+bounds = Bounds([0, 0, 0], [np.inf, np.inf, np.inf])
 
 # Ejecución del optimizador SciPy
 res = milp(
@@ -69,9 +66,7 @@ st.header("🎯 Resultados del Análisis")
 if res.success:
     st.success(f"**¡Optimización Exitosa!** Estado: {res.message}")
     
-    # Diseño en columnas para las variables de decisión y el beneficio total
     col1, col2, col3, col4 = st.columns(4)
-    
     es_entero = (modo_resolucion == "Números Enteros (Discretos)")
     
     with col1:
@@ -86,10 +81,8 @@ if res.success:
     with col4:
         st.metric(label="Ganancia Máxima Total (F)", value=f"${-res.fun:,.2f}")
         
-    # Tabla resumen del uso y holgura de recursos
     st.subheader("📊 Monitoreo de Restricciones y Recursos")
     
-    # Calculamos el consumo real final usando los valores del vector óptimo res.x
     consumo_r1 = (res.x[0] * 1) + (res.x[1] * 1) + (res.x[2] * 1)
     consumo_r2 = (res.x[0] * 20) + (res.x[1] * 10) + (res.x[2] * 5)
     consumo_r3 = (res.x[0] * 500) + (res.x[1] * 300) + (res.x[2] * 200)
@@ -103,7 +96,6 @@ if res.success:
     
     st.table(datos_tabla)
     
-    # Muestra del vector crudo como en tu print original
     with st.expander("Ver datos técnicos del vector de salida (res.x)"):
         st.code(f"Matriz de resultados crudos: {res.x}", language="python")
 
