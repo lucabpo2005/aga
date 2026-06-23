@@ -228,4 +228,4 @@ if PDF_DISPONIBLE:
             ('ALIGN', (0,0), (-1,-1), 'LEFT'),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ('BOTTOMPADDING', (0,0), (-1,-1), 5),
-]
+])
