@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import io
+from scipy.optimize import milp, LinearConstraint, Bounds
 
 # Intentamos importar reportlab para el PDF
 try:
@@ -15,7 +16,7 @@ except ImportError:
 # 1. Configuración de la interfaz web
 st.set_page_config(page_title="Calculador de Antenas 3D", layout="wide", page_icon="📊")
 st.title("📊 Calculador y Presupuestador de Costes de Antenas")
-st.write("Modificá la cantidad exacta de antenas a instalar para evaluar el escenario, la superficie cubierta y generar presupuestos.")
+st.write("Ingresá la superficie requerida en m² para calcular automáticamente la combinación óptima de antenas necesarias para la cobertura.")
 
 if not PDF_DISPONIBLE:
     st.warning("⚠️ Para descargar presupuestos en PDF, debés instalar reportlab. Corré en tu consola: `pip install reportlab`")
@@ -32,7 +33,10 @@ metros_cable_grande = 25.0
 metros_cable_mediano = 15.0
 metros_cable_chico = 10.0
 
-g_x, g_y, g_z = 150.0, 100.0, 80.0       
+# Cambiamos la función objetivo: ahora buscamos MINIMIZAR el costo de hardware base directo
+# Coeficientes: Costo por antena Grande (500), Mediana (300), Chica (200)
+c_optimization = [500.0, 300.0, 200.0]       
+
 r1_x, r1_y, r1_z = 1.0, 1.0, 1.0          
 r2_x, r2_y, r2_z = 20.0, 10.0, 5.0        
 r3_x, r3_y, r3_z = 500.0, 300.0, 200.0    
@@ -45,35 +49,63 @@ cober_z = 15.0
 # --- BARRA LATERAL: ENTRADA DE PARÁMETROS DEL USUARIO ---
 st.sidebar.header("⚙️ Configuración del Proyecto")
 
-st.sidebar.subheader("📡 Cantidad de Antenas a Instalar")
-antenas_g = st.sidebar.number_input("Cantidad de Antenas Grandes", min_value=0.0, value=0.0, step=1.0)
-antenas_m = st.sidebar.number_input("Cantidad de Antenas Medianas", min_value=0.0, value=0.0, step=1.0)
-antenas_c = st.sidebar.number_input("Cantidad de Antenas Chicas", min_value=0.0, value=0.0, step=1.0)
+# NUEVA SECCIÓN: Entrada del área total solicitada por el cliente (Inicia en 0.0)
+st.sidebar.subheader("📐 Área de Cobertura")
+superficie_requerida = st.sidebar.number_input("Superficie Requerida (m²)", min_value=0.0, value=0.0, step=5.0)
 
 st.sidebar.subheader("⚠️ Restricciones de Monitoreo")
 lim_r1 = st.sidebar.number_input("Límite máximo Cantidad Total de Antenas (≤)", min_value=1.0, value=15.0, step=1.0)
 lim_r2 = st.sidebar.number_input("Límite máximo Consumo de Watts (≤)", min_value=1.0, value=200.0, step=1.0)
 lim_r3 = st.sidebar.number_input("Presupuesto Máximo Base ($) (≤)", min_value=1.0, value=5000.0, step=1.0)
 
+# --- CÁLCULO DE OPTIMIZACIÓN AUTOMÁTICA BASADA EN M² ---
+# Si la superficie es 0, no ejecuta el optimizador para evitar asignaciones fantasmas
+if superficie_requerida > 0:
+    # Restricción de cobertura: cober_x*G + cober_y*M + cober_z*C >= superficie_requerida
+    # Para MILP (menor o igual), invertimos los signos: -cober_x*G - cober_y*M - cober_z*C <= -superficie_requerida
+    A_matrix = [[-cober_x, -cober_y, -cober_z]]
+    bu_vector = [-superficie_requerida]
+    bl_vector = [-np.inf]
+    
+    constraints = LinearConstraint(A_matrix, bl_vector, bu_vector)
+    bounds = Bounds([0.0, 0.0, 0.0], [lim_r1, lim_r1, lim_r1])
+    
+    # Resolvemos como números enteros discretos (siempre antenas enteras)
+    res = milp(c=c_optimization, constraints=constraints, bounds=bounds, integrality=[1, 1, 1])
+    
+    if res.success:
+        antenas_g = float(round(res.x[0]))
+        antenas_m = float(round(res.x[1]))
+        antenas_c = float(round(res.x[2]))
+        error_resolucion = False
+    else:
+        antenas_g, antenas_m, antenas_c = 0.0, 0.0, 0.0
+        error_resolucion = True
+else:
+    antenas_g, antenas_m, antenas_c = 0.0, 0.0, 0.0
+    error_resolucion = False
+
 # --- DISPLAY PRINCIPAL ---
 st.header("🎯 Resultados del Escenario Seleccionado")
 
-antenas_g_display = int(antenas_g) if antenas_g.is_integer() else antenas_g
-antenas_m_display = int(antenas_m) if antenas_m.is_integer() else antenas_m
-antenas_c_display = int(antenas_c) if antenas_c.is_integer() else antenas_c
+if error_resolucion:
+    st.error("❌ No es posible cubrir esa superficie con los límites de antenas máximos configurados. Flexibilizá las restricciones de monitoreo.")
+
+antenas_g_display = int(antenas_g)
+antenas_m_display = int(antenas_m)
+antenas_c_display = int(antenas_c)
 
 superficie_lograda = (antenas_g * cober_x) + (antenas_m * cober_y) + (antenas_c * cober_z)
-ganancia_estimada = (antenas_g * g_x) + (antenas_m * g_y) + (antenas_c * g_z)
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.metric(label="Antenas Grandes", value=antenas_g_display)
+    st.metric(label="Antenas Grandes Calculadas", value=antenas_g_display)
 with col2:
-    st.metric(label="Antenas Medianas", value=antenas_m_display)
+    st.metric(label="Antenas Medianas Calculadas", value=antenas_m_display)
 with col3:
-    st.metric(label="Antenas Chicas", value=antenas_c_display)
+    st.metric(label="Antenas Chicas Calculadas", value=antenas_c_display)
 with col4:
-    st.metric(label="Ganancia Comercial Estimada", value=f"${ganancia_estimada:,.2f}")
+    st.metric(label="Superficie Total Lograda", value=f"{superficie_lograda:,.1f} m²", delta=f"{max(0.0, superficie_lograda - superficie_requerida):,.1f} m² excedente")
     
 # --- PROCESAMIENTO UNIFICADO DE DATOS ---
 costo_hw_g, costo_hw_m, costo_hw_c = antenas_g * r3_x, antenas_m * r3_y, antenas_c * r3_z
@@ -110,12 +142,12 @@ with c2:
 with c3:
     st.metric("Total Mano de Obra y Viáticos", f"${costo_mano_obra_total + costo_viaticos:,.2f}")
 with c4:
-    st.metric("COSTO TOTAL DEL PROYECTO", f"${costo_total_proyecto:,.2f}", delta=f"{round(superficie_lograda, 1)} m² cubiertos")
+    st.metric("COSTO TOTAL DEL PROYECTO", f"${costo_total_proyecto:,.2f}", delta="Cálculo según m²")
 
 if consumo_r1 > lim_r1:
-    st.error(f"⚠️ Se ha excedido el límite máximo de antenas permitido ({int(lim_r1)} U).")
+    st.error(f"⚠️ El cálculo excede el límite máximo de antenas permitido ({int(lim_r1)} U).")
 if consumo_r2 > lim_r2:
-    st.warning(f"⚠️ Se ha excedido el límite máximo de consumo eléctrico planificado ({int(lim_r2)} Watts).")
+    st.warning(f"⚠️ El cálculo excede el consumo eléctrico planificado ({int(lim_r2)} Watts).")
 if consumo_r3 > lim_r3:
     st.info(f"⚠️ El costo base de hardware supera el presupuesto límite fijado (${int(lim_r3)}).")
 
@@ -165,7 +197,7 @@ tabla_maestra = {
     ],
     "Límite / Parámetro Estático": [
         f"Máx: {int(lim_r1)} U", 
-        "Basado en selección manual",
+        f"Mínimo Objetivo: {superficie_requerida} m²",
         f"Máx: {int(lim_r2)} W", 
         f"Presupuesto Base ≤ ${int(lim_r3)}", 
         "Valores corporativos fijos", 
@@ -202,30 +234,3 @@ if PDF_DISPONIBLE:
         cell_style = ParagraphStyle('CellText', parent=styles['Normal'], fontSize=7, leading=9)
         cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontSize=7, leading=9, fontName='Helvetica-Bold')
 
-        story.append(Paragraph("PRESUPUESTO TÉCNICO UNIFICADO DE INSTALACIÓN", title_style))
-        story.append(Paragraph("Documento consolidado emitido por el Calculador Logístico", subtitle_style))
-        story.append(Spacer(1, 5))
-        
-        story.append(Paragraph("1. Cuadro Consolidado de Equipos, Restricciones y Costos", h2_style))
-        
-        data_reportlab = [
-            [Paragraph(k, cell_bold) for k in tabla_maestra.keys()]
-        ]
-        
-        for i in range(len(tabla_maestra["Antenas a Eleccion"])):
-            fila = []
-            for col_name in tabla_maestra.keys():
-                texto = tabla_maestra[col_name][i]
-                estilo = cell_bold if i == 7 or col_name == "Antenas a Eleccion" else cell_style
-                fila.append(Paragraph(texto, estilo))
-            data_reportlab.append(fila)
-
-        # CORREGIDO: Anchos de columna explícitos asignados en puntos para ReportLab
-        t_maestra = Table(data_reportlab, colWidths=[120, 75, 75, 75, 125, 100])
-        t_maestra.setStyle(TableStyle)[
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#2B6CB0")),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 5),
-]
