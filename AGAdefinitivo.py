@@ -223,7 +223,8 @@ if PDF_DISPONIBLE:
 
         # REPARADO DEFINITIVAMENTE: Anchos fijos de columna asignados y bloque de ReportLab completamente cerrado
         t_maestra = Table(data_reportlab, colWidths=[120, 75, 75, 75, 125, 100])
-        t_maestra.setStyle(TableStyle([
+        t_maestra.setStyle(TableStyle)[
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#2B6CB0")),
             ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
             ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ]
