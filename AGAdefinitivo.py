@@ -35,6 +35,8 @@ metros_cable_chico = 10.0
 
 c_optimization = [500.0, 300.0, 200.0]       
 
+# SOLUCIÓN AL NAMEERROR: Las ganancias se declaran aquí arriba para que existan siempre
+g_x, g_y, g_z = 150.0, 100.0, 80.0       
 r1_x, r1_y, r1_z = 1.0, 1.0, 1.0          
 r2_x, r2_y, r2_z = 20.0, 10.0, 5.0        
 r3_x, r3_y, r3_z = 500.0, 300.0, 200.0    
@@ -236,8 +238,3 @@ tabla_maestra = {
 st.table(tabla_maestra)
 
 # --- MÓDULO EXPORTAR PDF ---
-st.subheader("📄 Generación de Presupuesto Profesional")
-
-if PDF_DISPONIBLE:
-    def generar_pdf():
-        buffer = io.BytesIO()
