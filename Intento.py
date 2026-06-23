@@ -25,26 +25,26 @@ if not PDF_DISPONIBLE:
 # --- BARRA LATERAL: ENTRADA DE PARÁMETROS DEL USUARIO ---
 st.sidebar.header("⚙️ Configuración de Parámetros")
 
-# SECCIÓN 1: Cantidades deseadas
+# SECCIÓN 1: Cantidades deseadas (Configuradas con valor inicial en 0.0)
 st.sidebar.subheader("📡 Cantidad de Antenas a Instalar")
-cant_grande = st.sidebar.number_input("Cantidad de Antenas Grandes", min_value=0.0, value=5.0, step=1.0)
-cant_mediana = st.sidebar.number_input("Cantidad de Antenas Medianas", min_value=0.0, value=5.0, step=1.0)
-cant_chica = st.sidebar.number_input("Cantidad de Antenas Chicas", min_value=0.0, value=3.0, step=1.0)
+cant_grande = st.sidebar.number_input("Cantidad de Antenas Grandes", min_value=0.0, value=0.0, step=1.0)
+cant_mediana = st.sidebar.number_input("Cantidad de Antenas Medianas", min_value=0.0, value=0.0, step=1.0)
+cant_chica = st.sidebar.number_input("Cantidad de Antenas Chicas", min_value=0.0, value=0.0, step=1.0)
 
 # SECCIÓN 2: Costes Operativos, Materiales y Viáticos
 st.sidebar.subheader("🚚 Viáticos y Mano de Obra")
-distancia_km = st.sidebar.number_input("Distancia al sitio (Km)", min_value=0.0, value=25.0, step=5.0)
-costo_km = st.sidebar.number_input("Costo por Km de combustible ($)", min_value=0.0, value=15.0, step=1.0)
-horas_trabajo = st.sidebar.number_input("Horas estimadas de trabajo", min_value=1.0, value=6.0, step=1.0)
-costo_hora = st.sidebar.number_input("Precio por hora técnica ($)", min_value=0.0, value=50.0, step=5.0)
+distancia_km = st.sidebar.number_input("Distancia al sitio (Km)", min_value=0.0, value=0.0, step=5.0)
+costo_km = st.sidebar.number_input("Costo por Km de combustible ($)", min_value=0.0, value=0.0, step=1.0)
+horas_trabajo = st.sidebar.number_input("Horas estimadas de trabajo", min_value=0.0, value=0.0, step=1.0)
+costo_hora = st.sidebar.number_input("Precio por hora técnica ($)", min_value=0.0, value=0.0, step=5.0)
 trabajo_altura = st.sidebar.checkbox("¿Requiere trabajo en altura/riesgo?", value=False)
 
 st.sidebar.subheader("🔌 Costes de Materiales Extra")
-precio_cable_metro = st.sidebar.number_input("Precio por metro de cable ($)", min_value=0.0, value=2.5, step=0.5)
-# NUEVO: Desglose de metros requeridos por tipo de antena y cable específico
-metros_cable_grande = st.sidebar.number_input("Metros de cable GRANDE por antena", min_value=1.0, value=25.0, step=1.0)
-metros_cable_mediano = st.sidebar.number_input("Metros de cable MEDIANO por antena", min_value=1.0, value=15.0, step=1.0)
-metros_cable_chico = st.sidebar.number_input("Metros de cable CHICO por antena", min_value=1.0, value=10.0, step=1.0)
+precio_cable_metro = st.sidebar.number_input("Precio por metro de cable ($)", min_value=0.0, value=0.0, step=0.5)
+# Metros requeridos por tipo de antena y cable específico inicializados en 0.0
+metros_cable_grande = st.sidebar.number_input("Metros de cable GRANDE por antena", min_value=0.0, value=0.0, step=1.0)
+metros_cable_mediano = st.sidebar.number_input("Metros de cable MEDIANO por antena", min_value=0.0, value=0.0, step=1.0)
+metros_cable_chico = st.sidebar.number_input("Metros de cable CHICO por antena", min_value=0.0, value=0.0, step=1.0)
 
 # Límites Máximos Permitidos
 st.sidebar.subheader("⚠️ Disponibilidad Máxima (Límites)")
@@ -110,7 +110,7 @@ if res.success:
     costo_sop_g, costo_sop_m, costo_sop_c = antenas_g * soporte_x, antenas_m * soporte_y, antenas_c * soporte_z
     costo_soportes_total = costo_sop_g + costo_sop_m + costo_sop_c
     
-    # NUEVO: Cálculo dinámico de metros y costos individuales por cada tipo de cable asignado
+    # Cálculo dinámico de metros y costos individuales por cada tipo de cable asignado
     total_metros_g = antenas_g * metros_cable_grande
     total_metros_m = antenas_m * metros_cable_mediano
     total_metros_c = antenas_c * metros_cable_chico
@@ -147,7 +147,6 @@ if res.success:
     # --- TABLA ÚNICA DE MONITOREO Y COSTES ---
     st.header("📋 Matriz Unificada: Desglose por Antena, Restricciones y Costes")
     
-    # NUEVO: Se actualizaron las celdas de la fila "Costo Material Extra: Cableado ($)" con su longitud y costo respectivo
     tabla_maestra = {
         "Antenas a Eleccion": [
             "Cantidad de Antenas (U)", 
