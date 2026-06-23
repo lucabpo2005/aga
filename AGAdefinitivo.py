@@ -55,7 +55,6 @@ if modo_calculo == "Calcular Antenas según Superficie (m²)":
     st.sidebar.subheader("📐 Área de Cobertura")
     superficie_requerida = st.sidebar.number_input("Superficie Requerida (m²)", min_value=0.0, value=0.0, step=5.0)
     
-    # Parámetros operativos modificables
     st.sidebar.subheader("🚚 Viáticos y Operación")
     distancia_km = st.sidebar.number_input("Distancia al sitio (Km)", min_value=0.0, value=25.0, step=5.0)
     costo_km = st.sidebar.number_input("Costo por Km de combustible ($)", min_value=0.0, value=15.0, step=1.0)
@@ -77,6 +76,7 @@ if modo_calculo == "Calcular Antenas según Superficie (m²)":
         constraints = LinearConstraint(A_matrix, bl_vector, bu_vector)
         bounds = Bounds([0.0, 0.0, 0.0], [lim_r1, lim_r1, lim_r1])
         
+        # CORRECCIÓN 1: Se cerró correctamente la lista de integridad para variables enteras discretas
         res = milp(c=c_optimization, constraints=constraints, bounds=bounds, integrality=[1, 1, 1])
         
         if res.success:
@@ -224,5 +224,4 @@ tabla_maestra = {
     "Límite / Parámetro Estático": [
         f"Máx: {int(lim_r1)} U", 
         parametro_superficie_txt,
-        f"Máx: {int(lim_r2)} W", 
-    ]
+    
