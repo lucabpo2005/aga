@@ -225,3 +225,4 @@ tabla_maestra = {
         f"Máx: {int(lim_r1)} U", 
         parametro_superficie_txt,
         f"Máx: {int(lim_r2)} W", 
+    ]
