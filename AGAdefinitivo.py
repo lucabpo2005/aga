@@ -223,7 +223,8 @@ if PDF_DISPONIBLE:
 
         # CORRECCIÓN 2: Se completaron los estilos y se cerró la tabla del PDF correctamente
         t_maestra = Table(data_reportlab, colWidths=[120, 75, 75, 75, 125, 100])
-        t_maestra.setStyle(TableStyle([
+        t_maestra.setStyle(TableStyle)[
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#2B6CB0")),
             ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
             ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ]
