@@ -138,7 +138,7 @@ if res.success:
     st.header("📋 Matriz Unificada: Desglose por Antena, Restricciones y Costes")
     
     tabla_maestra = {
-        "Métrica / Concepto": [
+        "Antenas a Eleccion": [
             "Cantidad de Antenas (U)", 
             "Consumo Eléctrico (Watts)", 
             "Costo de Hardware Base ($)", 
@@ -147,7 +147,7 @@ if res.success:
             "Mano de Obra + Viáticos Operativos ($)",
             "COSTO TOTAL CONSOLIDADO ($)"
         ],
-        "Grande (X)": [
+        "Grande": [
             f"{antenas_g} (Límite: {r1_x})", 
             f"{antenas_g * r2_x} W (Coef: {r2_x})", 
             f"${costo_hw_g:,.2f}", 
@@ -156,7 +156,7 @@ if res.success:
             "-", 
             "-"
         ],
-        "Mediana (Y)": [
+        "Mediana": [
             f"{antenas_m} (Límite: {r1_y})", 
             f"{antenas_m * r2_y} W (Coef: {r2_y})", 
             f"${costo_hw_m:,.2f}", 
@@ -165,7 +165,7 @@ if res.success:
             "-", 
             "-"
         ],
-        "Chica (Z)": [
+        "Chica": [
             f"{antenas_c} (Límite: {r1_z})", 
             f"{antenas_c * r2_z} W (Coef: {r2_z})", 
             f"${costo_hw_c:,.2f}", 
