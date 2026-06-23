@@ -20,7 +20,7 @@ st.write("Modificá la cantidad exacta de antenas a instalar para evaluar el esc
 if not PDF_DISPONIBLE:
     st.warning("⚠️ Para descargar presupuestos en PDF, debés instalar reportlab. Corré en tu consola: `pip install reportlab`")
 
-# --- VALORES TÉCNICOS Y COMERCIALES FIJOS (RESTAURADOS A LOS ANTERIORES) ---
+# --- VALORES TÉCNICOS Y COMERCIALES FIJOS ---
 # Viáticos y Mano de Obra fijos originales
 distancia_km = 25.0
 costo_km = 15.0
@@ -56,7 +56,7 @@ antenas_g = st.sidebar.number_input("Cantidad de Antenas Grandes", min_value=0.0
 antenas_m = st.sidebar.number_input("Cantidad de Antenas Medianas", min_value=0.0, value=0.0, step=1.0)
 antenas_c = st.sidebar.number_input("Cantidad de Antenas Chicas", min_value=0.0, value=0.0, step=1.0)
 
-# Límites Máximos Permitidos (Restaurados a los valores por defecto anteriores)
+# Límites Máximos Permitidos
 st.sidebar.subheader("⚠️ Restricciones de Monitoreo")
 lim_r1 = st.sidebar.number_input("Límite máximo Cantidad Total de Antenas (≤)", min_value=1.0, value=15.0, step=1.0)
 lim_r2 = st.sidebar.number_input("Límite máximo Consumo de Watts (≤)", min_value=1.0, value=200.0, step=1.0)
@@ -71,7 +71,7 @@ antenas_g_display = int(antenas_g) if antenas_g.is_integer() else antenas_g
 antenas_m_display = int(antenas_m) if antenas_m.is_integer() else antenas_m
 antenas_c_display = int(antenas_c) if antenas_c.is_integer() else antenas_c
 
-# Cálculo dinámico e instantáneo (Inician en 0 m² hasta que el usuario cargue equipos)
+# Cálculo dinámico e instantáneo
 superficie_lograda = (antenas_g * cober_x) + (antenas_m * cober_y) + (antenas_c * cober_z)
 ganancia_estimada = (antenas_g * g_x) + (antenas_m * g_y) + (antenas_c * g_z)
 
@@ -101,7 +101,7 @@ costo_cable_m = total_metros_m * precio_cable_metro
 costo_cable_c = total_metros_c * precio_cable_metro
 costo_cable_total = costo_cable_g + costo_cable_m + costo_cable_c
 
-# Cálculos de Mano de Obra y Viáticos (Utilizando los valores restaurados)
+# Cálculos de Mano de Obra y Viáticos
 costo_viaticos = distancia_km * costo_km
 mano_obra_base = horas_trabajo * costo_hora
 adicional_altura = (mano_obra_base * 0.35) if trabajo_altura else 0.0
@@ -109,7 +109,7 @@ costo_mano_obra_total = mano_obra_base + adicional_altura
 
 costo_total_proyecto = costo_hw_total + costo_soportes_total + costo_cable_total + costo_viaticos + costo_mano_obra_total
 
-# Consumos reales calculados en tiempo real
+# Consumos reales calculados
 consumo_r1 = (antenas_g * r1_x) + (antenas_m * r1_y) + (antenas_c * r1_z)
 consumo_r2 = (antenas_g * r2_x) + (antenas_m * r2_y) + (antenas_c * r2_z)
 consumo_r3 = (antenas_g * r3_x) + (antenas_m * r3_y) + (antenas_c * r3_z)
@@ -125,7 +125,7 @@ with c3:
 with c4:
     st.metric("COSTO TOTAL DEL PROYECTO", f"${costo_total_proyecto:,.2f}", delta=f"{round(superficie_lograda, 1)} m² cubiertos")
 
-# Alertas visuales de control frente a las restricciones del sistema
+# Alertas visuales de control
 if consumo_r1 > lim_r1:
     st.error(f"⚠️ Se ha excedido el límite máximo de antenas permitido ({int(lim_r1)} U).")
 if consumo_r2 > lim_r2:
@@ -137,8 +137,8 @@ if consumo_r3 > lim_r3:
 st.header("📋 Matriz Unificada: Desglose por Antena, Restricciones y Costes")
 
 tabla_maestra = {
-    "Métricas y Parámetros": [
-        "Cantidad de Antenas Asignadas (U)", 
+    "Antenas a Eleccion": [
+        "Cantidad de Antenas (U)", 
         "Cobertura de Superficie (m²)",
         "Consumo Eléctrico (Watts)", 
         "Costo de Hardware Base ($)", 
@@ -190,7 +190,7 @@ tabla_maestra = {
     "Total Utilizado / Subtotal": [
         f"{round(consumo_r1, 2)} U (Holgura: {round(lim_r1 - consumo_r1, 2)})",
         f"{round(superficie_lograda, 2)} m²",
-        f"{round(consumo_r2, 2) if es_entero else round(consumo_r2, 2)} W (Holgura: {round(lim_r2 - consumo_r2, 2)})",
+        f"{round(consumo_r2, 2)} W (Holgura: {round(lim_r2 - consumo_r2, 2)})",
         f"${costo_hw_total:,.2f}",
         f"${costo_soportes_total:,.2f}",
         f"${costo_cable_total:,.2f}",
@@ -220,3 +220,12 @@ if PDF_DISPONIBLE:
         story.append(Paragraph("Documento consolidado emitido por el Calculador Logístico", subtitle_style))
         story.append(Spacer(1, 5))
         
+        story.append(Paragraph("1. Cuadro Consolidado de Equipos, Restricciones y Costos", h2_style))
+        
+        data_reportlab = [
+            [Paragraph(k, cell_bold) for k in tabla_maestra.keys()]
+        ]
+        
+        for i in range(len(tabla_maestra["Antenas a Eleccion"])):
+            fila = []
+            for col_name in tabla_maestra.keys():
