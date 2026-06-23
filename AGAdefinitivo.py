@@ -75,7 +75,6 @@ if modo_calculo == "Calcular Antenas según Superficie (m²)":
         constraints = LinearConstraint(A_matrix, bl_vector, bu_vector)
         bounds = Bounds([0.0, 0.0, 0.0], [lim_r1, lim_r1, lim_r1])
         
-        # CORREGIDO: Vector de integridad asignado correctamente con su lista completa [1, 1, 1]
         res = milp(c=c_optimization, constraints=constraints, bounds=bounds, integrality=[1, 1, 1])
         
         if res.success:
@@ -135,7 +134,7 @@ costo_hw_g, costo_hw_m, costo_hw_c = antenas_g * r3_x, antenas_m * r3_y, antenas
 costo_hw_total = costo_hw_g + costo_hw_m + costo_hw_c
 
 costo_sop_g, costo_sop_m, costo_sop_c = antenas_g * soporte_x, antenas_m * soporte_y, antenas_c * soporte_z
-costo_soportes_total = costo_sop_g + costo_sop_m + costo_sop_c
+costo_soportes_total = costo_sop_g + costo_sop_m + soporte_z
 
 total_metros_g = antenas_g * metros_cable_grande
 total_metros_m = antenas_m * metros_cable_mediano
@@ -216,7 +215,7 @@ tabla_maestra = {
         f"{antenas_c * r2_z} W", 
         f"${costo_hw_c:,.2f}", 
         f"${costo_sop_c:,.2f}",  
-        f"{costo_cable_c:,.2f} ({int(total_metros_c)}m)", 
+        f"${costo_cable_c:,.2f} ({int(total_metros_c)}m)", 
         "-", 
         "-"
     ],
@@ -224,3 +223,5 @@ tabla_maestra = {
         f"Máx: {int(lim_r1)} U", 
         parametro_superficie_txt,
         f"Máx: {int(lim_r2)} W", 
+        f"Presupuesto Base ≤ ${int(lim_r3)}", 
+        "Valores corporativos fijos", 
