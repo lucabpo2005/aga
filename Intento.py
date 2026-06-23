@@ -199,4 +199,5 @@ if res.success:
                 ["Hardware Base Antenas", f"${costo_hw_total:,.2f}"],
                 ["Estructuras y Soportes", f"${costo_soportes_total:,.2f}"],
                 ["Cableado y Conectores", f"${costo_cable_total:,.2f}"],
+                  ]
     
