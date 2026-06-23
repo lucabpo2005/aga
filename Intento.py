@@ -100,30 +100,29 @@ if res.success:
     with col4:
         st.metric(label="Ganancia Máxima Estimada", value=f"${-res.fun:,.2f}")
         
-    # --- DETALLE DE COSTES AMPLIADO ---
-    st.header("💸 Desglose Total de Costes de la Operación")
+    # --- PROCESAMIENTO UNIFICADO DE DATOS (Mano de Obra y Totales) ---
+    costo_hw_g, costo_hw_m, costo_hw_c = antenas_g * r3_x, antenas_m * r3_y, antenas_c * r3_z
+    costo_hw_total = costo_hw_g + costo_hw_m + costo_hw_c
     
-    # 1. Costes de Hardware Base
-    costo_hw_total = (antenas_g * r3_x) + (antenas_m * r3_y) + (antenas_c * r3_z)
+    costo_sop_g, costo_sop_m, costo_sop_c = antenas_g * soporte_x, antenas_m * soporte_y, antenas_c * soporte_z
+    costo_soportes_total = costo_sop_g + costo_sop_m + costo_sop_c
     
-    # 2. Costes de Estructuras / Soportes
-    costo_soportes_total = (antenas_g * soporte_x) + (antenas_m * soporte_y) + (antenas_c * soporte_z)
-    
-    # 3. Costes de Cableado
     total_antenas = antenas_g + antenas_m + antenas_c
     total_metros_cable = total_antenas * metros_por_antena
     costo_cable_total = total_metros_cable * precio_cable_metro
     
-    # 4. Mano de obra y Viáticos
     costo_viaticos = distancia_km * costo_km
     mano_obra_base = horas_trabajo * costo_hora
-    adicional_altura = (mano_obra_base * 0.35) if trabajo_altura else 0.0  # +35% por riesgo de altura
+    adicional_altura = (mano_obra_base * 0.35) if trabajo_altura else 0.0
     costo_mano_obra_total = mano_obra_base + adicional_altura
     
-    # Coste final absoluto
     costo_total_proyecto = costo_hw_total + costo_soportes_total + costo_cable_total + costo_viaticos + costo_mano_obra_total
     
-    # Mostrar métricas del desglose financiero comercial
+    consumo_r1 = (res.x[0] * r1_x) + (res.x[1] * r1_y) + (res.x[2] * r1_z)
+    consumo_r2 = (res.x[0] * r2_x) + (res.x[1] * r2_y) + (res.x[2] * r2_z)
+    consumo_r3 = (res.x[0] * r3_x) + (res.x[1] * r3_y) + (res.x[2] * r3_z)
+
+    # Métricas resumidas en la interfaz superior
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.metric("Total Equipos e Infraestructura", f"${costo_hw_total + costo_soportes_total:,.2f}")
@@ -132,26 +131,68 @@ if res.success:
     with c3:
         st.metric("Total Mano de Obra (+Riesgo)", f"${costo_mano_obra_total:,.2f}")
     with c4:
-        st.metric("COSTO TOTAL FINAL DEL PROYECTO", f"${costo_total_proyecto:,.2f}", delta="Inversión requerida")
+        st.metric("COSTO TOTAL DEL PROYECTO", f"${costo_total_proyecto:,.2f}", delta="Inversión requerida")
+
+    # --- TABLA ÚNICA DE MONITOREO Y COSTES ---
+    st.header("📋 Matriz Unificada: Desglose por Antena, Restricciones y Costes")
     
-    # --- MONITOREO DINÁMICO DE RESTRICCIONES ---
-    st.subheader("📊 Monitoreo Dinámico de Restricciones Técnicas (Base)")
-    consumo_r1 = (res.x[0] * r1_x) + (res.x[1] * r1_y) + (res.x[2] * r1_z)
-    consumo_r2 = (res.x[0] * r2_x) + (res.x[1] * r2_y) + (res.x[2] * r2_z)
-    consumo_r3 = (res.x[0] * r3_x) + (res.x[1] * r3_y) + (res.x[2] * r3_z)
-    
-    datos_tabla = {
-        "Restricción Analizada": ["Cantidad de Antenas", "Consumo de Watts", "Costo Base Hardware"],
-        "Descripción de la Fórmula": [
-            f"1(Grande) + 1(Mediana) + 1(Chica) ≤ {int(lim_r1)}",
-            f"20(Grande) + 10(Mediana) + 5(Chica) ≤ {int(lim_r2)}",
-            f"500(Grande) + 300(Mediana) + 200(Chica) ≤ {int(lim_r3)}"
+    tabla_maestra = {
+        "Métrica / Concepto": [
+            "Cantidad de Antenas (U)", 
+            "Consumo Eléctrico (Watts)", 
+            "Costo de Hardware Base ($)", 
+            "Costo Estructuras / Soportes ($)", 
+            "Costo Material Extra: Cableado ($)",
+            "Mano de Obra + Viáticos Operativos ($)",
+            "COSTO TOTAL CONSOLIDADO ($)"
         ],
-        "Capacidad Utilizada": [round(consumo_r1, 2), round(consumo_r2, 2), round(consumo_r3, 2)],
-        "Límite Establecido": [int(lim_r1), int(lim_r2), int(lim_r3)],
-        "Sobrante (Holgura)": [round(lim_r1 - consumo_r1, 2), round(lim_r2 - consumo_r2, 2), round(lim_r3 - consumo_r3, 2)]
+        "Grande (X)": [
+            f"{antenas_g} (Límite: {r1_x})", 
+            f"{antenas_g * r2_x} W (Coef: {r2_x})", 
+            f"${costo_hw_g:,.2f}", 
+            f"${costo_sop_g:,.2f}", 
+            "-", 
+            "-", 
+            "-"
+        ],
+        "Mediana (Y)": [
+            f"{antenas_m} (Límite: {r1_y})", 
+            f"{antenas_m * r2_y} W (Coef: {r2_y})", 
+            f"${costo_hw_m:,.2f}", 
+            f"${costo_sop_m:,.2f}", 
+            "-", 
+            "-", 
+            "-"
+        ],
+        "Chica (Z)": [
+            f"{antenas_c} (Límite: {r1_z})", 
+            f"{antenas_c * r2_z} W (Coef: {r2_z})", 
+            f"${costo_hw_c:,.2f}", 
+            f"${costo_sop_z:,.2f}", 
+            "-", 
+            "-", 
+            "-"
+        ],
+        "Límite / Parámetro Comercial": [
+            f"Máx: {int(lim_r1)} U", 
+            f"Máx: {int(lim_r2)} W", 
+            f"Presupuesto Base ≤ ${int(lim_r3)}", 
+            "Especificaciones fijas", 
+            f"{int(total_metros_cable)}m totales a ${precio_cable_metro}/m", 
+            f"{horas_trabajo}hs, {distancia_km}km (+35% Altura si aplica)", 
+            "Suma total del proyecto"
+        ],
+        "Total Utilizado / Subtotal": [
+            f"{round(consumo_r1, 2)} U (Holgura: {round(lim_r1 - consumo_r1, 2)})",
+            f"{round(consumo_r2, 2)} W (Holgura: {round(lim_r2 - consumo_r2, 2)})",
+            f"${costo_hw_total:,.2f}",
+            f"${costo_soportes_total:,.2f}",
+            f"${costo_cable_total:,.2f}",
+            f"${costo_mano_obra_total + costo_viaticos:,.2f}",
+            f"${costo_total_proyecto:,.2f}"
+        ]
     }
-    st.table(datos_tabla)
+    st.table(tabla_maestra)
     
     # --- MÓDULO EXPORTAR PDF ---
     st.subheader("📄 Generación de Presupuesto Profesional")
@@ -159,45 +200,17 @@ if res.success:
     if PDF_DISPONIBLE:
         def generar_pdf():
             buffer = io.BytesIO()
-            doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+            doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=30, leftMargin=30, topMargin=40, bottomMargin=40)
             story = []
             
             styles = getSampleStyleSheet()
-            title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=22, textColor=colors.HexColor("#1A365D"), spaceAfter=15)
+            title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=20, textColor=colors.HexColor("#1A365D"), spaceAfter=15)
             subtitle_style = ParagraphStyle('DocSub', parent=styles['Normal'], fontSize=10, textColor=colors.gray, spaceAfter=25)
-            h2_style = ParagraphStyle('SectionHeader', parent=styles['Heading2'], fontSize=14, textColor=colors.HexColor("#2B6CB0"), spaceBefore=15, spaceAfter=10)
-            
-            # Encabezado
-            story.append(Paragraph("PRESUPUESTO TÉCNICO DE INSTALACIÓN", title_style))
-            story.append(Paragraph("Documento emitido por el Optimizador Logístico Automático", subtitle_style))
+            h2_style = ParagraphStyle('SectionHeader', parent=styles['Heading2'], fontSize=13, textColor=colors.HexColor("#2B6CB0"), spaceBefore=15, spaceAfter=10)
+            cell_style = ParagraphStyle('CellText', parent=styles['Normal'], fontSize=8, leading=10)
+            cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontSize=8, leading=10, fontName='Helvetica-Bold')
+
+            story.append(Paragraph("PRESUPUESTO TÉCNICO UNIFICADO DE INSTALACIÓN", title_style))
+            story.append(Paragraph("Documento consolidado emitido por el Optimizador Logístico", subtitle_style))
             story.append(Spacer(1, 10))
-            
-            # Sección 1: Cantidades
-            story.append(Paragraph("1. Resumen de Equipamiento a Instalar", h2_style))
-            data_equipos = [
-                ["Descripción del Elemento", "Cantidad Unidades"],
-                ["Antena Grande (Estructural)", str(antenas_g)],
-                ["Antena Mediana (Estructural)", str(antenas_m)],
-                ["Antena Chica (Estructural)", str(antenas_c)]
-            ]
-            t_equipos = Table(data_equipos, colWidths=[300, 150])
-            t_equipos.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#2B6CB0")),
-                ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-                ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-                ('BOTTOMPADDING', (0,0), (-1,0), 6),
-                ('GRID', (0,0), (-1,-1), 0.5, colors.lightgrey),
-                ('BACKGROUND', (0,1), (-1,-1), colors.HexColor("#F7FAFC"))
-            ]))
-            story.append(t_equipos)
-            story.append(Spacer(1, 15))
-            
-            # Sección 2: Desglose Económico
-            story.append(Paragraph("2. Desglose de Costes y Conceptos Comerciales", h2_style))
-            data_costos = [
-                ["Concepto Técnico / Material", "Subtotal ($)"],
-                ["Hardware Base Antenas", f"${costo_hw_total:,.2f}"],
-                ["Estructuras y Soportes", f"${costo_soportes_total:,.2f}"],
-                ["Cableado y Conectores", f"${costo_cable_total:,.2f}"],
-                  ]
-    
+
