@@ -203,6 +203,6 @@ if res.success:
     datos_tabla = {
         "Restricción Analizada": ["Cantidad de Antenas", "Consumo de Watts", "Costo Base Hardware"],
         "Descripción de la Fórmula": [
-            f"1(Grande) + 1(Mediana) + 1(Chica) ≤ {int(lim_r1)}}
-
+            f"1(Grande) + 1(Mediana) + 1(Chica) ≤ {int(lim_r1)}
+    ]}
     ]
