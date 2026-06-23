@@ -1,7 +1,6 @@
-import streamlit as st
+import streamlit st
 import numpy as np
 import io
-from scipy.optimize import milp, LinearConstraint, Bounds
 
 # Intentamos importar reportlab para el PDF
 try:
@@ -16,18 +15,22 @@ except ImportError:
 # 1. Configuración de la interfaz web
 st.set_page_config(page_title="Calculador de Antenas 3D", layout="wide", page_icon="📊")
 st.title("📊 Calculador y Presupuestador de Costes de Antenas")
-st.write("Evaluá escenarios cargando superficies objetivo o configurando la cantidad exacta de equipos de manera manual.")
+st.write("Modificá la cantidad exacta de antenas a instalar para evaluar el escenario, la superficie cubierta y generar presupuestos.")
 
 if not PDF_DISPONIBLE:
     st.warning("⚠️ Para descargar presupuestos en PDF, debés instalar reportlab. Corré en tu consola: `pip install reportlab`")
 
-# --- VALORES TÉCNICOS Y MATERIALES FIJOS ---
+# --- VALORES TÉCNICOS Y COMERCIALES FIJOS ---
+distancia_km = 25.0
+costo_km = 15.0
+horas_trabajo = 6.0
+costo_hora = 50.0
+trabajo_altura = False 
+
 precio_cable_metro = 2.5
 metros_cable_grande = 25.0
 metros_cable_mediano = 15.0
 metros_cable_chico = 10.0
-
-c_optimization = [500.0, 300.0, 200.0]       
 
 g_x, g_y, g_z = 150.0, 100.0, 80.0       
 r1_x, r1_y, r1_z = 1.0, 1.0, 1.0          
@@ -42,79 +45,22 @@ cober_z = 15.0
 # --- BARRA LATERAL: ENTRADA DE PARÁMETROS DEL USUARIO ---
 st.sidebar.header("⚙️ Configuración del Proyecto")
 
-modo_calculo = st.sidebar.radio(
-    "Seleccioná la dirección del cálculo:",
-    options=["Calcular Antenas según Superficie (m²)", "Calcular Superficie según cantidad de Antenas"]
-)
+st.sidebar.subheader("📡 Cantidad de Antenas a Instalar")
+antenas_g = st.sidebar.number_input("Cantidad de Antenas Grandes", min_value=0.0, value=0.0, step=1.0)
+antenas_m = st.sidebar.number_input("Cantidad de Antenas Medianas", min_value=0.0, value=0.0, step=1.0)
+antenas_c = st.sidebar.number_input("Cantidad de Antenas Chicas", min_value=0.0, value=0.0, step=1.0)
 
-superficie_requerida = 0.0
-error_resolucion = False
-
-if modo_calculo == "Calcular Antenas según Superficie (m²)":
-    st.sidebar.subheader("📐 Área de Cobertura")
-    superficie_requerida = st.sidebar.number_input("Superficie Requerida (m²)", min_value=0.0, value=0.0, step=5.0)
-    
-    st.sidebar.subheader("🚚 Viáticos y Operación")
-    distancia_km = st.sidebar.number_input("Distancia al sitio (Km)", min_value=0.0, value=25.0, step=5.0)
-    costo_km = st.sidebar.number_input("Costo por Km de combustible ($)", min_value=0.0, value=15.0, step=1.0)
-    horas_trabajo = st.sidebar.number_input("Horas estimadas de trabajo", min_value=0.0, value=6.0, step=1.0)
-    costo_hora = st.sidebar.number_input("Precio por hora técnica ($)", min_value=0.0, value=50.0, step=5.0)
-    trabajo_altura = st.sidebar.checkbox("¿Requiere trabajo en altura/riesgo?", value=False)
-
-    st.sidebar.subheader("⚠️ Restricciones de Monitoreo")
-    lim_r1 = st.sidebar.number_input("Límite máximo Cantidad Total de Antenas (≤)", min_value=1.0, value=15.0, step=1.0)
-    lim_r2 = st.sidebar.number_input("Límite máximo Consumo de Watts (≤)", min_value=1.0, value=200.0, step=1.0)
-    lim_r3 = st.sidebar.number_input("Presupuesto Máximo Base ($) (≤)", min_value=1.0, value=5000.0, step=1.0)
-
-    # Algoritmo MILP de optimización
-    if superficie_requerida > 0:
-        A_matrix = [[-cober_x, -cober_y, -cober_z]]
-        bu_vector = [-superficie_requerida]
-        bl_vector = [-np.inf]
-        
-        constraints = LinearConstraint(A_matrix, bl_vector, bu_vector)
-        bounds = Bounds([0.0, 0.0, 0.0], [lim_r1, lim_r1, lim_r1])
-        
-        res = milp(c=c_optimization, constraints=constraints, bounds=bounds, integrality=[1, 1, 1])
-        
-        if res.success:
-            antenas_g = float(round(res.x[0]))
-            antenas_m = float(round(res.x[1]))
-            antenas_c = float(round(res.x[2]))
-        else:
-            antenas_g, antenas_m, antenas_c = 0.0, 0.0, 0.0
-            error_resolucion = True
-    else:
-        antenas_g, antenas_m, antenas_c = 0.0, 0.0, 0.0
-
-else:
-    # Modo manual inverso
-    st.sidebar.subheader("📡 Cantidad de Antenas Manuales")
-    antenas_g = st.sidebar.number_input("Cantidad de Antenas Grandes", min_value=0.0, value=0.0, step=1.0)
-    antenas_m = st.sidebar.number_input("Cantidad de Antenas Medianas", min_value=0.0, value=0.0, step=1.0)
-    antenas_c = st.sidebar.number_input("Cantidad de Antenas Chicas", min_value=0.0, value=0.0, step=1.0)
-    
-    st.sidebar.subheader("🚚 Viáticos y Operación")
-    distancia_km = st.sidebar.number_input("Distancia al sitio (Km)", min_value=0.0, value=25.0, step=5.0)
-    costo_km = st.sidebar.number_input("Costo por Km de combustible ($)", min_value=0.0, value=15.0, step=1.0)
-    horas_trabajo = st.sidebar.number_input("Horas estimadas de trabajo", min_value=0.0, value=6.0, step=1.0)
-    costo_hora = st.sidebar.number_input("Precio por hora técnica ($)", min_value=0.0, value=50.0, step=5.0)
-    trabajo_altura = st.sidebar.checkbox("¿Requiere trabajo en altura/riesgo?", value=False)
-
-    st.sidebar.subheader("⚠️ Restricciones de Monitoreo")
-    lim_r1 = st.sidebar.number_input("Límite máximo Cantidad Total de Antenas (≤)", min_value=1.0, value=15.0, step=1.0)
-    lim_r2 = st.sidebar.number_input("Límite máximo Consumo de Watts (≤)", min_value=1.0, value=200.0, step=1.0)
-    lim_r3 = st.sidebar.number_input("Presupuesto Máximo Base ($) (≤)", min_value=1.0, value=5000.0, step=1.0)
+st.sidebar.subheader("⚠️ Restricciones de Monitoreo")
+lim_r1 = st.sidebar.number_input("Límite máximo Cantidad Total de Antenas (≤)", min_value=1.0, value=15.0, step=1.0)
+lim_r2 = st.sidebar.number_input("Límite máximo Consumo de Watts (≤)", min_value=1.0, value=200.0, step=1.0)
+lim_r3 = st.sidebar.number_input("Presupuesto Máximo Base ($) (≤)", min_value=1.0, value=5000.0, step=1.0)
 
 # --- DISPLAY PRINCIPAL ---
 st.header("🎯 Resultados del Escenario Seleccionado")
 
-if error_resolucion:
-    st.error("❌ No es posible cubrir esa superficie con los límites de antenas máximos configurados. Flexibilizá las restricciones de monitoreo.")
-
-antenas_g_display = int(antenas_g)
-antenas_m_display = int(antenas_m)
-antenas_c_display = int(antenas_c)
+antenas_g_display = int(antenas_g) if antenas_g.is_integer() else antenas_g
+antenas_m_display = int(antenas_m) if antenas_m.is_integer() else antenas_m
+antenas_c_display = int(antenas_c) if antenas_c.is_integer() else antenas_c
 
 superficie_lograda = (antenas_g * cober_x) + (antenas_m * cober_y) + (antenas_c * cober_z)
 ganancia_estimada = (antenas_g * g_x) + (antenas_m * g_y) + (antenas_c * g_z)
@@ -127,14 +73,14 @@ with col2:
 with col3:
     st.metric(label="Antenas Chicas", value=antenas_c_display)
 with col4:
-    st.metric(label="Superficie Total Lograda", value=f"{superficie_lograda:,.1f} m²")
+    st.metric(label="Ganancia Comercial Estimada", value=f"${ganancia_estimada:,.2f}")
     
 # --- PROCESAMIENTO UNIFICADO DE DATOS ---
 costo_hw_g, costo_hw_m, costo_hw_c = antenas_g * r3_x, antenas_m * r3_y, antenas_c * r3_z
 costo_hw_total = costo_hw_g + costo_hw_m + costo_hw_c
 
 costo_sop_g, costo_sop_m, costo_sop_c = antenas_g * soporte_x, antenas_m * soporte_y, antenas_c * soporte_z
-costo_soportes_total = costo_sop_g + costo_sop_m + soporte_z
+costo_soportes_total = costo_sop_g + costo_sop_m + costo_sop_c
 
 total_metros_g = antenas_g * metros_cable_grande
 total_metros_m = antenas_m * metros_cable_mediano
@@ -167,16 +113,14 @@ with c4:
     st.metric("COSTO TOTAL DEL PROYECTO", f"${costo_total_proyecto:,.2f}", delta=f"{round(superficie_lograda, 1)} m² cubiertos")
 
 if consumo_r1 > lim_r1:
-    st.error(f"⚠️ El cálculo excede el límite máximo de antenas permitido ({int(lim_r1)} U).")
+    st.error(f"⚠️ Se ha excedido el límite máximo de antenas permitido ({int(lim_r1)} U).")
 if consumo_r2 > lim_r2:
-    st.warning(f"⚠️ El cálculo excede el consumo eléctrico planificado ({int(lim_r2)} Watts).")
+    st.warning(f"⚠️ Se ha excedido el límite máximo de consumo eléctrico planificado ({int(lim_r2)} Watts).")
 if consumo_r3 > lim_r3:
     st.info(f"⚠️ El costo base de hardware supera el presupuesto límite fijado (${int(lim_r3)}).")
 
 # --- TABLA ÚNICA DE MONITOREO Y COSTES ---
 st.header("📋 Matriz Unificada: Desglose por Antena, Restricciones y Costes")
-
-parametro_superficie_txt = f"Mínimo Objetivo: {superficie_requerida} m²" if modo_calculo == "Calcular Antenas según Superficie (m²)" else "Calculado sobre selección"
 
 tabla_maestra = {
     "Antenas a Eleccion": [
@@ -221,9 +165,25 @@ tabla_maestra = {
     ],
     "Límite / Parámetro Estático": [
         f"Máx: {int(lim_r1)} U", 
-        parametro_superficie_txt,
+        "Basado en selección manual",
         f"Máx: {int(lim_r2)} W", 
         f"Presupuesto Base ≤ ${int(lim_r3)}", 
         "Valores corporativos fijos", 
-]
+        f"Valor fijo: ${precio_cable_metro}/m", 
+        f"Fijo: {horas_trabajo}hs, {distancia_km}km", 
+        "Inversión final calculada"
+    ],
+    "Total Utilizado / Subtotal": [
+        f"{round(consumo_r1, 2)} U (Holgura: {round(lim_r1 - consumo_r1, 2)})",
+        f"{round(superficie_lograda, 2)} m²",
+        f"{round(consumo_r2, 2)} W (Holgura: {round(lim_r2 - consumo_r2, 2)})",
+        f"${costo_hw_total:,.2f}",
+        f"${costo_soportes_total:,.2f}",
+        f"${costo_cable_total:,.2f}",
+        f"${costo_mano_obra_total + costo_viaticos:,.2f}",
+        f"${costo_total_proyecto:,.2f}"
+    ]
 }
+
+# SE AGREGA ÚNICAMENTE LA VISUALIZACIÓN DE LA TABLA MAESTRA SOLICITADA
+st.table(tabla_maestra)
