@@ -76,7 +76,7 @@ if modo_calculo == "Calcular Antenas según Superficie (m²)":
         constraints = LinearConstraint(A_matrix, bl_vector, bu_vector)
         bounds = Bounds([0.0, 0.0, 0.0], [lim_r1, lim_r1, lim_r1])
         
-        # CORRECCIÓN 1: Se cerró correctamente la lista de integridad para variables enteras discretas
+        # FIJADO: Vector de integridad cerrado correctamente
         res = milp(c=c_optimization, constraints=constraints, bounds=bounds, integrality=[1, 1, 1])
         
         if res.success:
@@ -224,5 +224,5 @@ tabla_maestra = {
     "Límite / Parámetro Estático": [
         f"Máx: {int(lim_r1)} U", 
         parametro_superficie_txt,
-    ]
+        f"Máx: {int(lim_r2)} W", 
     
