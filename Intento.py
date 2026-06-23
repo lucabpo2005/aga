@@ -56,7 +56,6 @@ modo_resolucion = st.sidebar.selectbox(
     options=["Números Enteros (Discretos)", "Números Continuos (Decimales)"]
 )
 
-# CORRECCIÓN 1: Condicional ternario completo sin errores de sintaxis
 integridad = [1, 1, 1] if modo_resolucion == "Números Enteros (Discretos)" else [0, 0, 0]
 
 
@@ -108,6 +107,15 @@ if res.success:
     costo_sop_g, costo_sop_m, costo_sop_c = antenas_g * soporte_x, antenas_m * soporte_y, antenas_c * soporte_z
     costo_soportes_total = costo_sop_g + costo_sop_m + costo_sop_c
     
+    # NUEVO: Cálculo desgosado de cables por tipo de antena
+    metros_g = antenas_g * metros_por_antena
+    metros_m = antenas_m * metros_por_antena
+    metros_c = antenas_c * metros_por_antena
+    
+    costo_cable_g = metros_g * precio_cable_metro
+    costo_cable_m = metros_m * precio_cable_metro
+    costo_cable_c = metros_c * precio_cable_metro
+    
     total_antenas = antenas_g + antenas_m + antenas_c
     total_metros_cable = total_antenas * metros_por_antena
     costo_cable_total = total_metros_cable * precio_cable_metro
@@ -143,7 +151,7 @@ if res.success:
             "Consumo Eléctrico (Watts)", 
             "Costo de Hardware Base ($)", 
             "Costo Estructuras / Soportes ($)", 
-            "Costo Material Extra: Cableado ($)",
+            "Costo Material Extra: Cableado ($)", # Se actualizó esta sección con los subtotales dinámicos
             "Mano de Obra + Viáticos Operativos ($)",
             "COSTO TOTAL CONSOLIDADO ($)"
         ],
@@ -152,7 +160,7 @@ if res.success:
             f"{antenas_g * r2_x} W (Coef: {r2_x})", 
             f"${costo_hw_g:,.2f}", 
             f"${costo_sop_g:,.2f}", 
-            "-", 
+            f"${costo_cable_g:,.2f} ({int(metros_g)}m)", 
             "-", 
             "-"
         ],
@@ -161,7 +169,7 @@ if res.success:
             f"{antenas_m * r2_y} W (Coef: {r2_y})", 
             f"${costo_hw_m:,.2f}", 
             f"${costo_sop_m:,.2f}", 
-            "-", 
+            f"${costo_cable_m:,.2f} ({int(metros_m)}m)", 
             "-", 
             "-"
         ],
@@ -169,8 +177,8 @@ if res.success:
             f"{antenas_c} (Límite: {r1_z})", 
             f"{antenas_c * r2_z} W (Coef: {r2_z})", 
             f"${costo_hw_c:,.2f}", 
-            f"${costo_sop_c:,.2f}",  # CORRECCIÓN 2: Se corrigió de costo_sop_z a costo_sop_c
-            "-", 
+            f"${costo_sop_c:,.2f}", 
+            f"${costo_cable_c:,.2f} ({int(metros_c)}m)", 
             "-", 
             "-"
         ],
@@ -179,7 +187,7 @@ if res.success:
             f"Máx: {int(lim_r2)} W", 
             f"Presupuesto Base ≤ ${int(lim_r3)}", 
             "Especificaciones fijas", 
-            f"{int(total_metros_cable)}m totales a ${precio_cable_metro}/m", 
+            f"Promedio: {int(metros_por_antena)}m/u a ${precio_cable_metro}/m", 
             f"{horas_trabajo}hs, {distancia_km}km (+35% Altura si aplica)", 
             "Suma total del proyecto"
         ],
@@ -201,7 +209,6 @@ if res.success:
     if PDF_DISPONIBLE:
         def generar_pdf():
             buffer = io.BytesIO()
-            # Margen ajustado para dar buen espacio al cuadro horizontal plano
             doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=20, leftMargin=20, topMargin=40, bottomMargin=40)
             story = []
             
@@ -209,7 +216,3 @@ if res.success:
             title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=18, textColor=colors.HexColor("#1A365D"), spaceAfter=15)
             subtitle_style = ParagraphStyle('DocSub', parent=styles['Normal'], fontSize=9, textColor=colors.gray, spaceAfter=20)
             h2_style = ParagraphStyle('SectionHeader', parent=styles['Heading2'], fontSize=12, textColor=colors.HexColor("#2B6CB0"), spaceBefore=15, spaceAfter=10)
-            cell_style = ParagraphStyle('CellText', parent=styles['Normal'], fontSize=7, leading=9)
-            cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontSize=7, leading=9, fontName='Helvetica-Bold')
-
-            story.append(Paragraph("PRESUPUESTO TÉCNICO UNIFICADO DE INSTALACIÓN", title_style))
