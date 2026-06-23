@@ -21,57 +21,47 @@ if not PDF_DISPONIBLE:
     st.warning("⚠️ Para descargar presupuestos en PDF, debés instalar reportlab. Corré en tu consola: `pip install reportlab`")
 
 # --- VALORES TÉCNICOS Y COMERCIALES FIJOS ---
-# Viáticos y Mano de Obra fijos originales
 distancia_km = 25.0
 costo_km = 15.0
 horas_trabajo = 6.0
 costo_hora = 50.0
 trabajo_altura = False 
 
-# Costes de Materiales Extra fijos originales
 precio_cable_metro = 2.5
 metros_cable_grande = 25.0
 metros_cable_mediano = 15.0
 metros_cable_chico = 10.0
 
-# Coeficientes Técnicos Internos originales
-g_x, g_y, g_z = 150.0, 100.0, 80.0       # Ganancia comercial
-r1_x, r1_y, r1_z = 1.0, 1.0, 1.0          # Coeficiente de unidad
-r2_x, r2_y, r2_z = 20.0, 10.0, 5.0        # Consumo de Watts
-r3_x, r3_y, r3_z = 500.0, 300.0, 200.0    # Costo de Hardware Base por antena
-soporte_x, soporte_y, soporte_z = 80.0, 50.0, 30.0 # Soportes fijos
+g_x, g_y, g_z = 150.0, 100.0, 80.0       
+r1_x, r1_y, r1_z = 1.0, 1.0, 1.0          
+r2_x, r2_y, r2_z = 20.0, 10.0, 5.0        
+r3_x, r3_y, r3_z = 500.0, 300.0, 200.0    
+soporte_x, soporte_y, soporte_z = 80.0, 50.0, 30.0 
 
-# Rendimiento de Cobertura por Antena (m² que cubre cada una)
-cober_x = 50.0  # Antena Grande cubre 50 m²
-cober_y = 30.0  # Antena Mediana cubre 30 m²
-cober_z = 15.0  # Antena Chica cubre 15 m²
-
+cober_x = 50.0  
+cober_y = 30.0  
+cober_z = 15.0  
 
 # --- BARRA LATERAL: ENTRADA DE PARÁMETROS DEL USUARIO ---
 st.sidebar.header("⚙️ Configuración del Proyecto")
 
-# SECCIÓN INTERACTIVA: Las antenas arrancan en 0 y el usuario las modifica a gusto
 st.sidebar.subheader("📡 Cantidad de Antenas a Instalar")
 antenas_g = st.sidebar.number_input("Cantidad de Antenas Grandes", min_value=0.0, value=0.0, step=1.0)
 antenas_m = st.sidebar.number_input("Cantidad de Antenas Medianas", min_value=0.0, value=0.0, step=1.0)
 antenas_c = st.sidebar.number_input("Cantidad de Antenas Chicas", min_value=0.0, value=0.0, step=1.0)
 
-# Límites Máximos Permitidos
 st.sidebar.subheader("⚠️ Restricciones de Monitoreo")
 lim_r1 = st.sidebar.number_input("Límite máximo Cantidad Total de Antenas (≤)", min_value=1.0, value=15.0, step=1.0)
 lim_r2 = st.sidebar.number_input("Límite máximo Consumo de Watts (≤)", min_value=1.0, value=200.0, step=1.0)
 lim_r3 = st.sidebar.number_input("Presupuesto Máximo Base ($) (≤)", min_value=1.0, value=5000.0, step=1.0)
 
-
 # --- DISPLAY PRINCIPAL ---
 st.header("🎯 Resultados del Escenario Seleccionado")
 
-# Conversión a enteros si corresponde para prolijidad visual
 antenas_g_display = int(antenas_g) if antenas_g.is_integer() else antenas_g
 antenas_m_display = int(antenas_m) if antenas_m.is_integer() else antenas_m
 antenas_c_display = int(antenas_c) if antenas_c.is_integer() else antenas_c
 
-# Cálculo dinámico e instantáneo
 superficie_lograda = (antenas_g * cober_x) + (antenas_m * cober_y) + (antenas_c * cober_z)
 ganancia_estimada = (antenas_g * g_x) + (antenas_m * g_y) + (antenas_c * g_z)
 
@@ -101,7 +91,6 @@ costo_cable_m = total_metros_m * precio_cable_metro
 costo_cable_c = total_metros_c * precio_cable_metro
 costo_cable_total = costo_cable_g + costo_cable_m + costo_cable_c
 
-# Cálculos de Mano de Obra y Viáticos
 costo_viaticos = distancia_km * costo_km
 mano_obra_base = horas_trabajo * costo_hora
 adicional_altura = (mano_obra_base * 0.35) if trabajo_altura else 0.0
@@ -109,12 +98,10 @@ costo_mano_obra_total = mano_obra_base + adicional_altura
 
 costo_total_proyecto = costo_hw_total + costo_soportes_total + costo_cable_total + costo_viaticos + costo_mano_obra_total
 
-# Consumos reales calculados
 consumo_r1 = (antenas_g * r1_x) + (antenas_m * r1_y) + (antenas_c * r1_z)
 consumo_r2 = (antenas_g * r2_x) + (antenas_m * r2_y) + (antenas_c * r2_z)
 consumo_r3 = (antenas_g * r3_x) + (antenas_m * r3_y) + (antenas_c * r3_z)
 
-# Métricas resumidas en la interfaz superior
 c1, c2, c3, c4 = st.columns(4)
 with c1:
     st.metric("Total Equipos e Infraestructura", f"${costo_hw_total + costo_soportes_total:,.2f}")
@@ -125,7 +112,6 @@ with c3:
 with c4:
     st.metric("COSTO TOTAL DEL PROYECTO", f"${costo_total_proyecto:,.2f}", delta=f"{round(superficie_lograda, 1)} m² cubiertos")
 
-# Alertas visuales de control
 if consumo_r1 > lim_r1:
     st.error(f"⚠️ Se ha excedido el límite máximo de antenas permitido ({int(lim_r1)} U).")
 if consumo_r2 > lim_r2:
@@ -226,6 +212,19 @@ if PDF_DISPONIBLE:
             [Paragraph(k, cell_bold) for k in tabla_maestra.keys()]
         ]
         
-        for i in range(len(tabla_maestra["Antenas a Eleccion"]))
+        for i in range(len(tabla_maestra["Antenas a Eleccion"])):
             fila = []
-            for col_name in tabla_maestra.keys()
+            for col_name in tabla_maestra.keys():
+                texto = tabla_maestra[col_name][i]
+                estilo = cell_bold if i == 7 or col_name == "Antenas a Eleccion" else cell_style
+                fila.append(Paragraph(texto, estilo))
+            data_reportlab.append(fila)
+
+        # CORREGIDO: Anchos de columna explícitos asignados en puntos para ReportLab
+        t_maestra = Table(data_reportlab, colWidths=[120, 75, 75, 75, 125, 100])
+        t_maestra.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#2B6CB0")),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 5),
