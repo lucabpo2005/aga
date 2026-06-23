@@ -198,4 +198,3 @@ tabla_maestra = {
 
 st.dataframe(tabla_maestra, use_container_width=True)
 
-st.success("✅ Aplicación lista y funcional para tu exposición")
