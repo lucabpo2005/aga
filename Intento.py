@@ -41,7 +41,10 @@ trabajo_altura = st.sidebar.checkbox("¿Requiere trabajo en altura/riesgo?", val
 
 st.sidebar.subheader("🔌 Costes de Materiales Extra")
 precio_cable_metro = st.sidebar.number_input("Precio por metro de cable ($)", min_value=0.0, value=2.5, step=0.5)
-metros_por_antena = st.sidebar.number_input("Metros de cable por antena (Promedio)", min_value=1.0, value=15.0, step=1.0)
+# NUEVO: Desglose de metros requeridos por tipo de antena y cable específico
+metros_cable_grande = st.sidebar.number_input("Metros de cable GRANDE por antena", min_value=1.0, value=25.0, step=1.0)
+metros_cable_mediano = st.sidebar.number_input("Metros de cable MEDIANO por antena", min_value=1.0, value=15.0, step=1.0)
+metros_cable_chico = st.sidebar.number_input("Metros de cable CHICO por antena", min_value=1.0, value=10.0, step=1.0)
 
 # Límites Máximos Permitidos
 st.sidebar.subheader("⚠️ Disponibilidad Máxima (Límites)")
@@ -107,18 +110,17 @@ if res.success:
     costo_sop_g, costo_sop_m, costo_sop_c = antenas_g * soporte_x, antenas_m * soporte_y, antenas_c * soporte_z
     costo_soportes_total = costo_sop_g + costo_sop_m + costo_sop_c
     
-    # NUEVO: Cálculo desgosado de cables por tipo de antena
-    metros_g = antenas_g * metros_por_antena
-    metros_m = antenas_m * metros_por_antena
-    metros_c = antenas_c * metros_por_antena
+    # NUEVO: Cálculo dinámico de metros y costos individuales por cada tipo de cable asignado
+    total_metros_g = antenas_g * metros_cable_grande
+    total_metros_m = antenas_m * metros_cable_mediano
+    total_metros_c = antenas_c * metros_cable_chico
     
-    costo_cable_g = metros_g * precio_cable_metro
-    costo_cable_m = metros_m * precio_cable_metro
-    costo_cable_c = metros_c * precio_cable_metro
+    costo_cable_g = total_metros_g * precio_cable_metro
+    costo_cable_m = total_metros_m * precio_cable_metro
+    costo_cable_c = total_metros_c * precio_cable_metro
     
-    total_antenas = antenas_g + antenas_m + antenas_c
-    total_metros_cable = total_antenas * metros_por_antena
-    costo_cable_total = total_metros_cable * precio_cable_metro
+    costo_cable_total = costo_cable_g + costo_cable_m + costo_cable_c
+    total_metros_combinados = total_metros_g + total_metros_m + total_metros_c
     
     costo_viaticos = distancia_km * costo_km
     mano_obra_base = horas_trabajo * costo_hora
@@ -145,13 +147,14 @@ if res.success:
     # --- TABLA ÚNICA DE MONITOREO Y COSTES ---
     st.header("📋 Matriz Unificada: Desglose por Antena, Restricciones y Costes")
     
+    # NUEVO: Se actualizaron las celdas de la fila "Costo Material Extra: Cableado ($)" con su longitud y costo respectivo
     tabla_maestra = {
         "Antenas a Eleccion": [
             "Cantidad de Antenas (U)", 
             "Consumo Eléctrico (Watts)", 
             "Costo de Hardware Base ($)", 
             "Costo Estructuras / Soportes ($)", 
-            "Costo Material Extra: Cableado ($)", # Se actualizó esta sección con los subtotales dinámicos
+            "Costo Material Extra: Cableado ($)",
             "Mano de Obra + Viáticos Operativos ($)",
             "COSTO TOTAL CONSOLIDADO ($)"
         ],
@@ -160,7 +163,7 @@ if res.success:
             f"{antenas_g * r2_x} W (Coef: {r2_x})", 
             f"${costo_hw_g:,.2f}", 
             f"${costo_sop_g:,.2f}", 
-            f"${costo_cable_g:,.2f} ({int(metros_g)}m)", 
+            f"${costo_cable_g:,.2f} (Cable G: {int(total_metros_g)}m)", 
             "-", 
             "-"
         ],
@@ -169,7 +172,7 @@ if res.success:
             f"{antenas_m * r2_y} W (Coef: {r2_y})", 
             f"${costo_hw_m:,.2f}", 
             f"${costo_sop_m:,.2f}", 
-            f"${costo_cable_m:,.2f} ({int(metros_m)}m)", 
+            f"${costo_cable_m:,.2f} (Cable M: {int(total_metros_m)}m)", 
             "-", 
             "-"
         ],
@@ -177,8 +180,8 @@ if res.success:
             f"{antenas_c} (Límite: {r1_z})", 
             f"{antenas_c * r2_z} W (Coef: {r2_z})", 
             f"${costo_hw_c:,.2f}", 
-            f"${costo_sop_c:,.2f}", 
-            f"${costo_cable_c:,.2f} ({int(metros_c)}m)", 
+            f"${costo_sop_c:,.2f}",  
+            f"${costo_cable_c:,.2f} (Cable C: {int(total_metros_c)}m)", 
             "-", 
             "-"
         ],
@@ -187,7 +190,7 @@ if res.success:
             f"Máx: {int(lim_r2)} W", 
             f"Presupuesto Base ≤ ${int(lim_r3)}", 
             "Especificaciones fijas", 
-            f"Promedio: {int(metros_por_antena)}m/u a ${precio_cable_metro}/m", 
+            f"Valor de referencia: ${precio_cable_metro}/m", 
             f"{horas_trabajo}hs, {distancia_km}km (+35% Altura si aplica)", 
             "Suma total del proyecto"
         ],
@@ -213,6 +216,3 @@ if res.success:
             story = []
             
             styles = getSampleStyleSheet()
-            title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=18, textColor=colors.HexColor("#1A365D"), spaceAfter=15)
-            subtitle_style = ParagraphStyle('DocSub', parent=styles['Normal'], fontSize=9, textColor=colors.gray, spaceAfter=20)
-            h2_style = ParagraphStyle('SectionHeader', parent=styles['Heading2'], fontSize=12, textColor=colors.HexColor("#2B6CB0"), spaceBefore=15, spaceAfter=10)
