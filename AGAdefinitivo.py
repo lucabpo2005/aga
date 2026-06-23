@@ -226,3 +226,4 @@ tabla_maestra = {
         f"Presupuesto Base ≤ ${int(lim_r3)}", 
         "Valores corporativos fijos", 
 ]
+}
