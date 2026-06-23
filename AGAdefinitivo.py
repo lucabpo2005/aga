@@ -16,7 +16,7 @@ except ImportError:
 # 1. Configuración de la interfaz web
 st.set_page_config(page_title="Calculador de Antenas 3D", layout="wide", page_icon="📊")
 st.title("📊 Calculador y Presupuestador de Costes de Antenas")
-st.write("Ingresá la superficie requerida en m² para calcular automáticamente la combinación óptima de antenas necesarias para la cobertura.")
+st.write("Evaluá escenarios cargando superficies objetivo o configurando la cantidad exacta de equipos de manera manual.")
 
 if not PDF_DISPONIBLE:
     st.warning("⚠️ Para descargar presupuestos en PDF, debés instalar reportlab. Corré en tu consola: `pip install reportlab`")
@@ -33,8 +33,6 @@ metros_cable_grande = 25.0
 metros_cable_mediano = 15.0
 metros_cable_chico = 10.0
 
-# Cambiamos la función objetivo: ahora buscamos MINIMIZAR el costo de hardware base directo
-# Coeficientes: Costo por antena Grande (500), Mediana (300), Chica (200)
 c_optimization = [500.0, 300.0, 200.0]       
 
 r1_x, r1_y, r1_z = 1.0, 1.0, 1.0          
@@ -49,41 +47,57 @@ cober_z = 15.0
 # --- BARRA LATERAL: ENTRADA DE PARÁMETROS DEL USUARIO ---
 st.sidebar.header("⚙️ Configuración del Proyecto")
 
-# NUEVA SECCIÓN: Entrada del área total solicitada por el cliente (Inicia en 0.0)
-st.sidebar.subheader("📐 Área de Cobertura")
-superficie_requerida = st.sidebar.number_input("Superficie Requerida (m²)", min_value=0.0, value=0.0, step=5.0)
+# MODO DE USO HÍBRIDO: Permite alternar la dirección del cálculo sin romper la app
+modo_calculo = st.sidebar.radio(
+    "Seleccioná la dirección del cálculo:",
+    options=["Calcular Antenas según Superficie (m²)", "Calcular Superficie según cantidad de Antenas"]
+)
 
-st.sidebar.subheader("⚠️ Restricciones de Monitoreo")
-lim_r1 = st.sidebar.number_input("Límite máximo Cantidad Total de Antenas (≤)", min_value=1.0, value=15.0, step=1.0)
-lim_r2 = st.sidebar.number_input("Límite máximo Consumo de Watts (≤)", min_value=1.0, value=200.0, step=1.0)
-lim_r3 = st.sidebar.number_input("Presupuesto Máximo Base ($) (≤)", min_value=1.0, value=5000.0, step=1.0)
+superficie_requerida = 0.0
+error_resolucion = False
 
-# --- CÁLCULO DE OPTIMIZACIÓN AUTOMÁTICA BASADA EN M² ---
-# Si la superficie es 0, no ejecuta el optimizador para evitar asignaciones fantasmas
-if superficie_requerida > 0:
-    # Restricción de cobertura: cober_x*G + cober_y*M + cober_z*C >= superficie_requerida
-    # Para MILP (menor o igual), invertimos los signos: -cober_x*G - cober_y*M - cober_z*C <= -superficie_requerida
-    A_matrix = [[-cober_x, -cober_y, -cober_z]]
-    bu_vector = [-superficie_requerida]
-    bl_vector = [-np.inf]
+if modo_calculo == "Calcular Antenas según Superficie (m²)":
+    st.sidebar.subheader("📐 Área de Cobertura")
+    superficie_requerida = st.sidebar.number_input("Superficie Requerida (m²)", min_value=0.0, value=0.0, step=5.0)
     
-    constraints = LinearConstraint(A_matrix, bl_vector, bu_vector)
-    bounds = Bounds([0.0, 0.0, 0.0], [lim_r1, lim_r1, lim_r1])
-    
-    # Resolvemos como números enteros discretos (siempre antenas enteras)
-    res = milp(c=c_optimization, constraints=constraints, bounds=bounds, integrality=[1, 1, 1])
-    
-    if res.success:
-        antenas_g = float(round(res.x[0]))
-        antenas_m = float(round(res.x[1]))
-        antenas_c = float(round(res.x[2]))
-        error_resolucion = False
+    # Límites máximos
+    st.sidebar.subheader("⚠️ Restricciones de Monitoreo")
+    lim_r1 = st.sidebar.number_input("Límite máximo Cantidad Total de Antenas (≤)", min_value=1.0, value=15.0, step=1.0)
+    lim_r2 = st.sidebar.number_input("Límite máximo Consumo de Watts (≤)", min_value=1.0, value=200.0, step=1.0)
+    lim_r3 = st.sidebar.number_input("Presupuesto Máximo Base ($) (≤)", min_value=1.0, value=5000.0, step=1.0)
+
+    # Motor MILP para resolver hacia adelante
+    if superficie_requerida > 0:
+        A_matrix = [[-cober_x, -cober_y, -cober_z]]
+        bu_vector = [-superficie_requerida]
+        bl_vector = [-np.inf]
+        
+        constraints = LinearConstraint(A_matrix, bl_vector, bu_vector)
+        bounds = Bounds([0.0, 0.0, 0.0], [lim_r1, lim_r1, lim_r1])
+        
+        res = milp(c=c_optimization, constraints=constraints, bounds=bounds, integrality=[1, 1, 1])
+        
+        if res.success:
+            antenas_g = float(round(res.x[0]))
+            antenas_m = float(round(res.x[1]))
+            antenas_c = float(round(res.x[2]))
+        else:
+            antenas_g, antenas_m, antenas_c = 0.0, 0.0, 0.0
+            error_resolucion = True
     else:
         antenas_g, antenas_m, antenas_c = 0.0, 0.0, 0.0
-        error_resolucion = True
+
 else:
-    antenas_g, antenas_m, antenas_c = 0.0, 0.0, 0.0
-    error_resolucion = False
+    # Modo manual inverso: el usuario coloca antenas fijas y sumamos los m²
+    st.sidebar.subheader("📡 Cantidad de Antenas Manuales")
+    antenas_g = st.sidebar.number_input("Cantidad de Antenas Grandes", min_value=0.0, value=0.0, step=1.0)
+    antenas_m = st.sidebar.number_input("Cantidad de Antenas Medianas", min_value=0.0, value=0.0, step=1.0)
+    antenas_c = st.sidebar.number_input("Cantidad de Antenas Chicas", min_value=0.0, value=0.0, step=1.0)
+    
+    st.sidebar.subheader("⚠️ Restricciones de Monitoreo")
+    lim_r1 = st.sidebar.number_input("Límite máximo Cantidad Total de Antenas (≤)", min_value=1.0, value=15.0, step=1.0)
+    lim_r2 = st.sidebar.number_input("Límite máximo Consumo de Watts (≤)", min_value=1.0, value=200.0, step=1.0)
+    lim_r3 = st.sidebar.number_input("Presupuesto Máximo Base ($) (≤)", min_value=1.0, value=5000.0, step=1.0)
 
 # --- DISPLAY PRINCIPAL ---
 st.header("🎯 Resultados del Escenario Seleccionado")
@@ -96,16 +110,17 @@ antenas_m_display = int(antenas_m)
 antenas_c_display = int(antenas_c)
 
 superficie_lograda = (antenas_g * cober_x) + (antenas_m * cober_y) + (antenas_c * cober_z)
+ganancia_estimada = (antenas_g * g_x) + (antenas_m * g_y) + (antenas_c * g_z)
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.metric(label="Antenas Grandes Calculadas", value=antenas_g_display)
+    st.metric(label="Antenas Grandes", value=antenas_g_display)
 with col2:
-    st.metric(label="Antenas Medianas Calculadas", value=antenas_m_display)
+    st.metric(label="Antenas Medianas", value=antenas_m_display)
 with col3:
-    st.metric(label="Antenas Chicas Calculadas", value=antenas_c_display)
+    st.metric(label="Antenas Chicas", value=antenas_c_display)
 with col4:
-    st.metric(label="Superficie Total Lograda", value=f"{superficie_lograda:,.1f} m²", delta=f"{max(0.0, superficie_lograda - superficie_requerida):,.1f} m² excedente")
+    st.metric(label="Superficie Total Lograda", value=f"{superficie_lograda:,.1f} m²")
     
 # --- PROCESAMIENTO UNIFICADO DE DATOS ---
 costo_hw_g, costo_hw_m, costo_hw_c = antenas_g * r3_x, antenas_m * r3_y, antenas_c * r3_z
@@ -142,7 +157,7 @@ with c2:
 with c3:
     st.metric("Total Mano de Obra y Viáticos", f"${costo_mano_obra_total + costo_viaticos:,.2f}")
 with c4:
-    st.metric("COSTO TOTAL DEL PROYECTO", f"${costo_total_proyecto:,.2f}", delta="Cálculo según m²")
+    st.metric("COSTO TOTAL DEL PROYECTO", f"${costo_total_proyecto:,.2f}", delta=f"{round(superficie_lograda, 1)} m² cubiertos")
 
 if consumo_r1 > lim_r1:
     st.error(f"⚠️ El cálculo excede el límite máximo de antenas permitido ({int(lim_r1)} U).")
@@ -153,6 +168,8 @@ if consumo_r3 > lim_r3:
 
 # --- TABLA ÚNICA DE MONITOREO Y COSTES ---
 st.header("📋 Matriz Unificada: Desglose por Antena, Restricciones y Costes")
+
+parametro_superficie_txt = f"Mínimo Objetivo: {superficie_requerida} m²" if modo_calculo == "Calcular Antenas según Superficie (m²)" else "Calculado sobre selección"
 
 tabla_maestra = {
     "Antenas a Eleccion": [
@@ -197,7 +214,7 @@ tabla_maestra = {
     ],
     "Límite / Parámetro Estático": [
         f"Máx: {int(lim_r1)} U", 
-        f"Mínimo Objetivo: {superficie_requerida} m²",
+        parametro_superficie_txt,
         f"Máx: {int(lim_r2)} W", 
         f"Presupuesto Base ≤ ${int(lim_r3)}", 
         "Valores corporativos fijos", 
@@ -224,13 +241,3 @@ st.subheader("📄 Generación de Presupuesto Profesional")
 if PDF_DISPONIBLE:
     def generar_pdf():
         buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=20, leftMargin=20, topMargin=40, bottomMargin=40)
-        story = []
-        
-        styles = getSampleStyleSheet()
-        title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=18, textColor=colors.HexColor("#1A365D"), spaceAfter=15)
-        subtitle_style = ParagraphStyle('DocSub', parent=styles['Normal'], fontSize=9, textColor=colors.gray, spaceAfter=20)
-        h2_style = ParagraphStyle('SectionHeader', parent=styles['Heading2'], fontSize=12, textColor=colors.HexColor("#2B6CB0"), spaceBefore=15, spaceAfter=10)
-        cell_style = ParagraphStyle('CellText', parent=styles['Normal'], fontSize=7, leading=9)
-        cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontSize=7, leading=9, fontName='Helvetica-Bold')
-
