@@ -1,4 +1,4 @@
-import streamlit st
+import streamlit.st
 import numpy as np
 import io
 
