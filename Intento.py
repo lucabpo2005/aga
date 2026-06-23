@@ -199,3 +199,4 @@ if res.success:
             data_costos = [
                 ["Concepto Técnico / Material", "Cálculo Realizado", "Subtotal ($)"],
                 ["Hardware Base Antenas", f"Equipos principales", f"${costo_hw_total:,.2f}"],
+            ]
