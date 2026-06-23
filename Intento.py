@@ -25,7 +25,7 @@ if not PDF_DISPONIBLE:
 # --- BARRA LATERAL: ENTRADA DE PARÁMETROS DEL USUARIO ---
 st.sidebar.header("⚙️ Configuración de Parámetros")
 
-# SECCIÓN 1: Cantidades deseadas (Configuradas con valor inicial en 0.0)
+# SECCIÓN 1: Cantidades deseadas (Inicializadas en 0.0 para que el usuario empiece de cero)
 st.sidebar.subheader("📡 Cantidad de Antenas a Instalar")
 cant_grande = st.sidebar.number_input("Cantidad de Antenas Grandes", min_value=0.0, value=0.0, step=1.0)
 cant_mediana = st.sidebar.number_input("Cantidad de Antenas Medianas", min_value=0.0, value=0.0, step=1.0)
@@ -33,18 +33,18 @@ cant_chica = st.sidebar.number_input("Cantidad de Antenas Chicas", min_value=0.0
 
 # SECCIÓN 2: Costes Operativos, Materiales y Viáticos
 st.sidebar.subheader("🚚 Viáticos y Mano de Obra")
-distancia_km = st.sidebar.number_input("Distancia al sitio (Km)", min_value=0.0, value=0.0, step=5.0)
-costo_km = st.sidebar.number_input("Costo por Km de combustible ($)", min_value=0.0, value=0.0, step=1.0)
-horas_trabajo = st.sidebar.number_input("Horas estimadas de trabajo", min_value=0.0, value=0.0, step=1.0)
-costo_hora = st.sidebar.number_input("Precio por hora técnica ($)", min_value=0.0, value=0.0, step=5.0)
+distancia_km = st.sidebar.number_input("Distancia al sitio (Km)", min_value=0.0, value=25.0, step=5.0)
+costo_km = st.sidebar.number_input("Costo por Km de combustible ($)", min_value=0.0, value=15.0, step=1.0)
+horas_trabajo = st.sidebar.number_input("Horas estimadas de trabajo", min_value=0.0, value=6.0, step=1.0)
+costo_hora = st.sidebar.number_input("Precio por hora técnica ($)", min_value=0.0, value=50.0, step=5.0)
 trabajo_altura = st.sidebar.checkbox("¿Requiere trabajo en altura/riesgo?", value=False)
 
 st.sidebar.subheader("🔌 Costes de Materiales Extra")
-precio_cable_metro = st.sidebar.number_input("Precio por metro de cable ($)", min_value=0.0, value=0.0, step=0.5)
-# Metros requeridos por tipo de antena y cable específico inicializados en 0.0
-metros_cable_grande = st.sidebar.number_input("Metros de cable GRANDE por antena", min_value=0.0, value=0.0, step=1.0)
-metros_cable_mediano = st.sidebar.number_input("Metros de cable MEDIANO por antena", min_value=0.0, value=0.0, step=1.0)
-metros_cable_chico = st.sidebar.number_input("Metros de cable CHICO por antena", min_value=0.0, value=0.0, step=1.0)
+precio_cable_metro = st.sidebar.number_input("Precio por metro de cable ($)", min_value=0.0, value=2.5, step=0.5)
+# SOLUCIÓN: Inicializados con sus valores base típicos para que multipliquen automáticamente al añadir antenas, pero modificables
+metros_cable_grande = st.sidebar.number_input("Metros de cable GRANDE por antena", min_value=0.0, value=25.0, step=1.0)
+metros_cable_mediano = st.sidebar.number_input("Metros de cable MEDIANO por antena", min_value=0.0, value=15.0, step=1.0)
+metros_cable_chico = st.sidebar.number_input("Metros de cable CHICO por antena", min_value=0.0, value=10.0, step=1.0)
 
 # Límites Máximos Permitidos
 st.sidebar.subheader("⚠️ Disponibilidad Máxima (Límites)")
@@ -66,7 +66,7 @@ integridad = [1, 1, 1] if modo_resolucion == "Números Enteros (Discretos)" else
 g_x, g_y, g_z = 150.0, 100.0, 80.0
 r1_x, r1_y, r1_z = 1.0, 1.0, 1.0
 r2_x, r2_y, r2_z = 20.0, 10.0, 5.0
-r3_x, r3_y, r3_z = 500.0, 300.0, 200.0 # Coste base de hardware por tipo de antena
+r3_x, r3_y, r3_z = 500.0, 300.0, 200.0 
 
 # Soportes específicos fijos por tipo de antena
 soporte_x, soporte_y, soporte_z = 80.0, 50.0, 30.0
@@ -110,7 +110,7 @@ if res.success:
     costo_sop_g, costo_sop_m, costo_sop_c = antenas_g * soporte_x, antenas_m * soporte_y, antenas_c * soporte_z
     costo_soportes_total = costo_sop_g + costo_sop_m + costo_sop_c
     
-    # Cálculo dinámico de metros y costos individuales por cada tipo de cable asignado
+    # El cálculo de metros totales ahora responde correctamente a la cantidad de antenas seleccionadas
     total_metros_g = antenas_g * metros_cable_grande
     total_metros_m = antenas_m * metros_cable_mediano
     total_metros_c = antenas_c * metros_cable_chico
@@ -120,7 +120,6 @@ if res.success:
     costo_cable_c = total_metros_c * precio_cable_metro
     
     costo_cable_total = costo_cable_g + costo_cable_m + costo_cable_c
-    total_metros_combinados = total_metros_g + total_metros_m + total_metros_c
     
     costo_viaticos = distancia_km * costo_km
     mano_obra_base = horas_trabajo * costo_hora
@@ -162,7 +161,7 @@ if res.success:
             f"{antenas_g * r2_x} W (Coef: {r2_x})", 
             f"${costo_hw_g:,.2f}", 
             f"${costo_sop_g:,.2f}", 
-            f"${costo_cable_g:,.2f} (Cable G: {int(total_metros_g)}m)", 
+            f"${costo_cable_g:,.2f} ({int(total_metros_g)}m)", 
             "-", 
             "-"
         ],
@@ -171,7 +170,7 @@ if res.success:
             f"{antenas_m * r2_y} W (Coef: {r2_y})", 
             f"${costo_hw_m:,.2f}", 
             f"${costo_sop_m:,.2f}", 
-            f"${costo_cable_m:,.2f} (Cable M: {int(total_metros_m)}m)", 
+            f"${costo_cable_m:,.2f} ({int(total_metros_m)}m)", 
             "-", 
             "-"
         ],
@@ -180,7 +179,7 @@ if res.success:
             f"{antenas_c * r2_z} W (Coef: {r2_z})", 
             f"${costo_hw_c:,.2f}", 
             f"${costo_sop_c:,.2f}",  
-            f"${costo_cable_c:,.2f} (Cable C: {int(total_metros_c)}m)", 
+            f"${costo_cable_c:,.2f} ({int(total_metros_c)}m)", 
             "-", 
             "-"
         ],
@@ -215,3 +214,4 @@ if res.success:
             story = []
             
             styles = getSampleStyleSheet()
+            title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=18, textColor=colors.HexColor("#1A365D"), spaceAfter=15)
