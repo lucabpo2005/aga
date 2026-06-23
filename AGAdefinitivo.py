@@ -42,7 +42,6 @@ cober_z = 15.0
 # --- BARRA LATERAL: ENTRADA DE PARÁMETROS DEL USUARIO ---
 st.sidebar.header("⚙️ Configuración del Proyecto")
 
-# MODO DE USO HÍBRIDO RESTAURADO
 modo_calculo = st.sidebar.radio(
     "Seleccioná la dirección del cálculo:",
     options=["Calcular Antenas según Superficie (m²)", "Calcular Superficie según cantidad de Antenas"]
@@ -76,7 +75,7 @@ if modo_calculo == "Calcular Antenas según Superficie (m²)":
         constraints = LinearConstraint(A_matrix, bl_vector, bu_vector)
         bounds = Bounds([0.0, 0.0, 0.0], [lim_r1, lim_r1, lim_r1])
         
-        # FIJADO: Vector de integridad cerrado correctamente
+        # CORREGIDO: Vector de integridad asignado correctamente con su lista completa [1, 1, 1]
         res = milp(c=c_optimization, constraints=constraints, bounds=bounds, integrality=[1, 1, 1])
         
         if res.success:
@@ -217,7 +216,7 @@ tabla_maestra = {
         f"{antenas_c * r2_z} W", 
         f"${costo_hw_c:,.2f}", 
         f"${costo_sop_c:,.2f}",  
-        f"${costo_cable_c:,.2f} ({int(total_metros_c)}m)", 
+        f"{costo_cable_c:,.2f} ({int(total_metros_c)}m)", 
         "-", 
         "-"
     ],
@@ -225,4 +224,3 @@ tabla_maestra = {
         f"Máx: {int(lim_r1)} U", 
         parametro_superficie_txt,
         f"Máx: {int(lim_r2)} W", 
-    
