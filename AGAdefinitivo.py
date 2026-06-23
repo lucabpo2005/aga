@@ -226,6 +226,6 @@ if PDF_DISPONIBLE:
             [Paragraph(k, cell_bold) for k in tabla_maestra.keys()]
         ]
         
-        for i in range(len(tabla_maestra["Antenas a Eleccion"])):
+        for i in range(len(tabla_maestra["Antenas a Eleccion"]))
             fila = []
-            for col_name in tabla_maestra.keys():
+            for col_name in tabla_maestra.keys()
