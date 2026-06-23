@@ -225,3 +225,4 @@ tabla_maestra = {
         f"Máx: {int(lim_r2)} W", 
         f"Presupuesto Base ≤ ${int(lim_r3)}", 
         "Valores corporativos fijos", 
+]
