@@ -185,5 +185,50 @@ tabla_maestra = {
     ]
 }
 
-# SE AGREGA ÚNICAMENTE LA VISUALIZACIÓN DE LA TABLA MAESTRA SOLICITADA
+# Hacemos visible la tabla en la interfaz de Streamlit
 st.table(tabla_maestra)
+
+# --- MÓDULO EXPORTAR PDF ---
+st.subheader("📄 Generación de Presupuesto Profesional")
+
+if PDF_DISPONIBLE:
+    def generar_pdf():
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=20, leftMargin=20, topMargin=40, bottomMargin=40)
+        story = []
+        
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=18, textColor=colors.HexColor("#1A365D"), spaceAfter=15)
+        subtitle_style = ParagraphStyle('DocSub', parent=styles['Normal'], fontSize=9, textColor=colors.gray, spaceAfter=20)
+        h2_style = ParagraphStyle('SectionHeader', parent=styles['Heading2'], fontSize=12, textColor=colors.HexColor("#2B6CB0"), spaceBefore=15, spaceAfter=10)
+        cell_style = ParagraphStyle('CellText', parent=styles['Normal'], fontSize=7, leading=9)
+        cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontSize=7, leading=9, fontName='Helvetica-Bold')
+
+        story.append(Paragraph("PRESUPUESTO TÉCNICO UNIFICADO DE INSTALACIÓN", title_style))
+        story.append(Paragraph("Documento consolidado emitido por el Calculador Logístico", subtitle_style))
+        story.append(Spacer(1, 5))
+        
+        story.append(Paragraph("1. Cuadro Consolidado de Equipos, Restricciones y Costos", h2_style))
+        
+        data_reportlab = [
+            [Paragraph(k, cell_bold) for k in tabla_maestra.keys()]
+        ]
+        
+        for i in range(len(tabla_maestra["Antenas a Eleccion"])):
+            fila = []
+            for col_name in tabla_maestra.keys():
+                texto = tabla_maestra[col_name][i]
+                estilo = cell_bold if i == 7 or col_name == "Antenas a Eleccion" else cell_style
+                fila.append(Paragraph(texto, estilo))
+            data_reportlab.append(fila)
+
+        # TOTALMENTE CERRADO: Anchos explícitos en puntos para ReportLab
+        t_maestra = Table(data_reportlab, colWidths=[120, 75, 75, 75, 125, 100])
+        t_maestra.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#2B6CB0")),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+            ('TOPPADDING', (0,0), (-1,-1), 5),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.lightgrey),
