@@ -224,4 +224,5 @@ tabla_maestra = {
     "Límite / Parámetro Estático": [
         f"Máx: {int(lim_r1)} U", 
         parametro_superficie_txt,
+    ]
     
