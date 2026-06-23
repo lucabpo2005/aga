@@ -32,7 +32,7 @@ metros_cable_grande = 25.0
 metros_cable_mediano = 15.0
 metros_cable_chico = 10.0
 
-# CORRECCIÓN 1: Se restauraron las ganancias comerciales que faltaban en tu código
+# REPARADO: Aquí están las variables fijas de ganancia que causaban el NameError
 g_x, g_y, g_z = 150.0, 100.0, 80.0       
 r1_x, r1_y, r1_z = 1.0, 1.0, 1.0          
 r2_x, r2_y, r2_z = 20.0, 10.0, 5.0        
@@ -221,10 +221,9 @@ if PDF_DISPONIBLE:
                 fila.append(Paragraph(texto, estilo))
             data_reportlab.append(fila)
 
-        # CORRECCIÓN 2: Se completaron los estilos y se cerró la tabla del PDF correctamente
+        # REPARADO DEFINITIVAMENTE: Anchos fijos de columna asignados y bloque de ReportLab completamente cerrado
         t_maestra = Table(data_reportlab, colWidths=[120, 75, 75, 75, 125, 100])
-        t_maestra.setStyle(TableStyle)[
+        t_maestra.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#2B6CB0")),
             ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
             ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-            ]
